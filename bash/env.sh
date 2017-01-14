@@ -1,0 +1,25 @@
+
+if [ -z "$CXX" ];         then export CXX="ccache $COMPILER"; fi
+if [ -z "$CC" ];          then export CC="ccache $CCOMPILER"; fi
+if [ -z "$BOT_ROOT" ];    then export BOT_ROOT=$HOME/VFX;     fi;
+if [ -z "$BOT_JOBS" ];    then export BOT_JOBS=4;             fi;
+if [ -z "$TMPDIR" ];      then export TMPDIR=/tmp;             fi;
+
+export CFLAGS="$CFLAGS -I$BOT_ROOT/include"
+export CPPFLAGS="$CPPFLAGS -I$BOT_ROOT/include"
+export CXXFLAGS="$CXXFLAGS -I$BOT_ROOT/include"
+export LDFLAGS="$LDFLAGS -L$BOT_ROOT/lib"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$BOT_ROOT/lib/pkgconfig";
+
+if [ -z "$CMAKE_INCLUDE_PATH" ]; then export CMAKE_INCLUDE_PATH="$BOT_ROOT/include"; fi
+if [ -z "$CMAKE_LIBRARY_PATH" ]; then export CMAKE_LIBRARY_PATH="$BOT_ROOT/lib"; fi
+
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_SHARED_LINKER_FLAGS=-L$CMAKE_LIBRARY_PATH"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_MODULE_LINKER_FLAGS=-L$CMAKE_LIBRARY_PATH"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_EXE_LINKER_FLAGS=-L$CMAKE_LIBRARY_PATH"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_LIBRARY_PATH=$CMAKE_LIBRARY_PATH"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INCLUDE_PATH=$CMAKE_INCLUDE_PATH"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=OFF"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INSTALL_NAME_DIR=@loader_path/../lib"
+export CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib"
+

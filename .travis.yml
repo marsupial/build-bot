@@ -1,0 +1,268 @@
+sudo: required
+language: cpp
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - USE_CCACHE=1
+    - CCACHE_COMPRESS=1
+    - CCACHE_CPP2=1
+    - secure: "YmqJGXriF9FzGYn7Z3mLZIubiuIpDb7auisPNCyydSX9fZo4PIPy2jedgJ9f74YbpNLIIwpFj+cpB9zmzCO6Bw11IM5sCeaslQk1qBBLlddZptYbtejz4yN5eAyAOwLEBIN1GZyY98yqu9dWp8o6eQlK4Aqzsfd59HlGjmYZ/3NlBkaxEEL0KcwyWOCcStJwDoy2UMORC71iVR6ydcu6UGaI6vVkfY5gv/cT8qpzZ6wvASN/uvFpgT+tWP2cNvtSUjs+acbS+h8h91qLJIa67ANJzjth7BxntVnHDBV1leDz1eTg+aNj29Cp+jFgFrdVrB3QdXtwmnsI4QARg2lu0VNfDllxJF6LCLqV0KdM1btw5XsBeZJgG2rSmjs6YTZYR89mhYQGfn8vbAhSJ7acjAMohbjYhAn8VRCn2nP6bAiPk+OoP5itZwN1WywNQysZJ1kyvXHUnIK8lksJR6mbcxdLD/O4To3mY5HC5VY7gYWSW2HqU4Ez4b5hFLNQ2PpO7wcgCA4SdQUsl4LL4EFf16cU9qBxuxG8WMDv5CTXQcN/vSYeyxc7EKJs73gd7+gV6Ro0jK1nWxz9E3eIK7xP6t/Wa5BdJ0W4flW9Z47ZcxTxdww1XtAuvsVpMhlgWYj3WN/ub92HQNPT9ryMnD7yEdA5XEmFx3BPSoXM40VHJN4="
+
+virtualenv:
+  system_site_packages: true
+
+cache:
+  apt: true
+  ccache: true
+  directories:
+    - $HOME/.ccache
+    - $HOME/built
+
+matrix:
+  # Mark failure as soon as one single entry does
+  fast_finish: true
+
+  exclude:
+    # Note: Workaround travis-ci/travis-ci#4681
+    - os: osx
+    - os: linux
+
+  include:
+    # OS X first as it takes longer
+    - os: osx
+      osx_image: xcode6.4
+      compiler: clang
+      env: COMPILER=clang++ CCOMPILER=clang
+
+    - os: linux
+      services: docker
+      compiler: gcc-4.8
+      env: OS_TYPE=centos OS_VERSION=7 COMPILER=g++-4.8 CCOMPILER=gcc-4.8
+
+before_install:
+- |
+  echo $(uname -a)
+  export BOT_ROOT=$HOME/VFX
+  export TMPDIR=/tmp
+  export CXX="ccache $COMPILER"
+  export CC="ccache $CCOMPILER"
+  source bash/env.sh
+  $CXX --version
+  $CC --version
+
+  source bash/packages.sh
+  BotPlatformSetup "$TRAVIS_OS_NAME"
+  export SECONDS=0
+
+  mkdir -p $BOT_ROOT
+  wget $URL --no-check-certificate "https://github.com/marsupial/buildbot/releases/download/untagged-9c000c11e51b6666e563/buildbot-$BOT_OS_NAME.tbz" -qO- | tar -xj --strip-components=1 -C "$BOT_ROOT"
+  ls -la $BOT_ROOT
+
+  if [ $TRAVIS_OS_NAME == 'linux' ]; then
+    sudo apt-get update
+    sudo apt-get install -qq libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+                             python-numpy python-scipy libssl-dev
+    sudo apt-get remove -qq libilmbase6 libopenexr6 exrtools
+
+    # echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
+    # sudo service docker restart
+    # sleep 5
+    # sudo docker pull centos:centos${OS_VERSION}
+    echo "LDFLAGS : $LDFLAGS"
+  elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+    # This is where timeout is hiding
+    brew install coreutils ccache
+    brew install autoconf automake
+
+    sudo mv /usr/local /usr/local.bak
+    sudo mkdir -p /usr/local/bin
+    sudo chmod -R 777 /usr/local/
+    if [ -f $HOME/built/built.tgz ]; then
+      #tar xzf $HOME/built/built.tgz -C /
+      echo "NoTAR"
+    fi
+
+    BotEmptyUsrLocal
+    echo "CXX: $CXX"
+    echo "CC: $CC"
+
+    BotPlatformInstall
+  fi
+
+- |
+  # PkgConfig
+  if [ $TRAVIS_OS_NAME == 'osx' ] ; then
+    export PATH=$BOT_ROOT/bin:$PATH
+    BotInstall_pkgconfig --with-internal-glib
+  fi
+
+- |
+  ## BOOST
+  BotInstall_boost
+
+- |
+  # GLEW
+  BotInstall_glew
+
+- |
+  # CLEW
+  BotInstall_clew
+
+- |
+  # GLFW
+  BotInstall_glfw
+
+- |
+  # PTEX
+  BotInstall_ptex
+
+- |
+  # OSD
+  BotInstall_osd
+
+- |
+  # NumPy
+  BotInstall_numpy
+
+- |
+  # OpenEXR
+  BotInstall_openexr
+
+- |
+  # HDF5
+  BotInstall_hdf5
+
+- |
+  ### Alembic
+  BotInstall_alembic
+
+- |
+  # Field3D
+  BotInstall_field3D
+
+- |
+  # Blosc
+  BotInstall_blosc
+
+- |
+  # OpenVDB
+  BotInstall_openvdb
+
+- |
+  # PNG
+  BotInstall_png
+
+- |
+  # JPEG
+  BotInstall_jpeg
+
+- |
+  # GIF
+  BotInstall_gif
+
+- |
+  # TIFF
+  BotInstall_tiff
+
+- |
+  # Freetype
+  BotInstall_freetype
+
+- |
+  # Jpeg-2000
+  BotInstall_jpeg2000
+
+- |
+  # WebP
+  BotInstall_webp
+
+- |
+  # RAW
+  BotInstall_libraw
+
+- |
+  # FFMpeg
+  BotInstall_ffmpeg
+
+- |
+  # DCMTK
+  BotInstall_dcmtk
+
+- |
+  # LCMS2
+  BotInstall_lcms2
+
+- |
+  # TinyXML
+  BotInstall_tinyxml
+
+- |
+  # Yaml++
+  BotInstall_yamlxx
+
+- |
+  # OpenColorIO
+  BotInstall_ocio
+
+- |
+  # OpenImageIO
+  export CXX="$COMPILER"
+  export CC="$CCOMPILER"
+  BotInstall_oiio -DUSE_CCACHE=ON
+  export CXX="ccache $COMPILER"
+  export CC="ccache $CCOMPILER"
+
+- |
+  # OpenColorIO.2
+  rm -rf "$BOT_ROOT/include/OpenColorIO"
+  rm -rf "/tmp/ocio"
+  BotInstall_ocio
+
+- |
+  # Debug
+  ls -l $BOT_ROOT/include
+
+
+script:
+- |
+  echo $(uname -a)
+  if [ $(BotTimeRemaing 5) ]; then
+    if [ $TRAVIS_OS_NAME == 'linux' ]; then
+
+      docker run --privileged -d -ti -e "container=docker" -v /$HOME:/home/travis -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
+      DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
+      docker logs $DOCKER_CONTAINER_ID
+      echo "uname -a; ls -l /home; exit" | docker run -ti $DOCKER_CONTAINER_ID /bin/bash
+      docker exec -ti $DOCKER_CONTAINER_ID yum -y install gcc-c++
+      docker exec -ti $DOCKER_CONTAINER_ID g++ --version
+      docker ps -a
+      docker stop $DOCKER_CONTAINER_ID
+      docker rm -v $DOCKER_CONTAINER_ID
+    elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/bin"
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/lib"
+      BotRestoreUsrLocal
+    fi
+  fi
+
+before_deploy:
+- |
+  export BOT_DEPLOY=${BOT_ROOT}/../$(basename $TRAVIS_REPO_SLUG)-${TRAVIS_OS_NAME}.tbz
+  BZIP=-9 tar -cSjC ${BOT_ROOT} . > ${BOT_DEPLOY}
+  #tar -cC ${BOT_ROOT} . | bz2 -9 > ${BOT_DEPLOY}
+
+deploy:
+  skip_cleanup: true
+  provider: releases
+  file: '${BOT_DEPLOY}'
+  api_key:
+    secure: "Lo+BOwacQViHom4DkhrnrVeJ2DoBgqj1joa+Yc0VcphcaKAzgZHLIHE4KMJ5j65iz9uFkqrkGNCvMyFBK/GMIKK9WpM/rx/93TnNZaYIHAlv7BTXgWIiwcgpM07r3L49Kto5JW5WkmYih5oM0CeUfVobYWsH4Z4a0/41srWieVZYY+/aWOXQqnfmaFTo9jCyVXkimOlS7R21gdktSzqlt0WSBjQTP02+sh/OZ+qiQB1DjITjdbbxqrkqKyeXv7T8tvVFwdejrNpvt/9ipnZKisKNxF8rZ/AOVEhoLnCPwqQCeEA4kbcZzPwdl6nEi4pjspD+Pf1HRcPMhdgU2DJ6V7GvLODZUWZdT/2G0NCqyxf65rm/U2N7ucrirGx4mpGbcGIkpknW99Kj0GZ5mBLaOJksKK6LMtQcDTl9gmZSadgVK6LtUnEvfzKdGWUUtJEp/thjTI8GbqNefL3jOHMU1RofT1+sK+RUHQ2bLkp0a3ScLGlJVMd5yQ0etBPT9BkOOyCLZZOIgV3uLi+bz+pt2Wtcw1AKOVvMMKio7LrNt3RqX7hlq3QgpwGwc3uCKpheMs23NVYldIhj18G7Ba7F9kTShOPASszMaoYpnJ/KwaPqYWFLl3c7SVgte2oxwg4x7GJeI3R+OK3IEiSeMAB7NOnml3Oda1DwnmCwk36/svA="
+  on:
+    branch: master
+    repo: $TRAVIS_REPO_SLUG
+    # tags: true
+    # condition: $TRAVIS_TAG != ""
