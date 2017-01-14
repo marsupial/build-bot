@@ -1,0 +1,267 @@
+sudo: required
+language: cpp
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - USE_CCACHE=1
+    - CCACHE_COMPRESS=1
+    - CCACHE_CPP2=1
+    - secure: "YmqJGXriF9FzGYn7Z3mLZIubiuIpDb7auisPNCyydSX9fZo4PIPy2jedgJ9f74YbpNLIIwpFj+cpB9zmzCO6Bw11IM5sCeaslQk1qBBLlddZptYbtejz4yN5eAyAOwLEBIN1GZyY98yqu9dWp8o6eQlK4Aqzsfd59HlGjmYZ/3NlBkaxEEL0KcwyWOCcStJwDoy2UMORC71iVR6ydcu6UGaI6vVkfY5gv/cT8qpzZ6wvASN/uvFpgT+tWP2cNvtSUjs+acbS+h8h91qLJIa67ANJzjth7BxntVnHDBV1leDz1eTg+aNj29Cp+jFgFrdVrB3QdXtwmnsI4QARg2lu0VNfDllxJF6LCLqV0KdM1btw5XsBeZJgG2rSmjs6YTZYR89mhYQGfn8vbAhSJ7acjAMohbjYhAn8VRCn2nP6bAiPk+OoP5itZwN1WywNQysZJ1kyvXHUnIK8lksJR6mbcxdLD/O4To3mY5HC5VY7gYWSW2HqU4Ez4b5hFLNQ2PpO7wcgCA4SdQUsl4LL4EFf16cU9qBxuxG8WMDv5CTXQcN/vSYeyxc7EKJs73gd7+gV6Ro0jK1nWxz9E3eIK7xP6t/Wa5BdJ0W4flW9Z47ZcxTxdww1XtAuvsVpMhlgWYj3WN/ub92HQNPT9ryMnD7yEdA5XEmFx3BPSoXM40VHJN4="
+
+virtualenv:
+  system_site_packages: true
+
+cache:
+  apt: true
+  ccache: true
+  directories:
+    - $HOME/.ccache
+    - $HOME/built
+
+matrix:
+  # Mark failure as soon as one single entry does
+  fast_finish: true
+
+  exclude:
+    # Note: Workaround travis-ci/travis-ci#4681
+    - os: osx
+    - os: linux
+
+  include:
+    # OS X first as it takes longer
+    - os: osx
+      osx_image: xcode6.4
+      compiler: clang
+      env: COMPILER=clang++ CCOMPILER=clang
+
+    - os: linux
+      services: docker
+      compiler: gcc-4.8
+      env: OS_TYPE=centos OS_VERSION=7 COMPILER=g++-4.8 CCOMPILER=gcc-4.8
+
+before_install:
+- |
+  echo $(uname -a)
+  export BOT_ROOT=$HOME/VFX
+  export TMPDIR=/tmp
+  export CXX="ccache $COMPILER"
+  export CC="ccache $CCOMPILER"
+  source bash/env.sh
+  $COMPILER --version
+  $CCOMPILER --version
+
+  source bash/packages.sh
+  BotPlatformSetup "$TRAVIS_OS_NAME"
+  export SECONDS=0
+
+  mkdir -p $BOT_ROOT
+  BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-7ab893abf88ffc241ac5/buildbot-$BOT_OS_NAME.txz"
+  ls -la $BOT_ROOT
+
+  if [ $TRAVIS_OS_NAME == 'linux' ]; then
+    sudo apt-get update
+    sudo apt-get install -qq libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+                             python-numpy python-scipy libssl-dev
+    # QT
+    # sudo apt-get install libxcb-xkb1 libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-render0 libxcb-render-util0 libxcb-keysyms1
+    sudo apt-get install -qq '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev
+    sudo apt-get remove -qq libilmbase6 libopenexr6 exrtools
+    sudo apt-get remove -qq libqt4-declarative libqt4-designer libqt4-dev \
+      libqt4-dev-bin libqt4-help libqt4-network libqt4-opengl libqt4-opengl-dev \
+      libqt4-qt3support libqt4-script libqt4-scripttools libqt4-sql libqt4-svg \
+      libqt4-test libqt4-xml libqt4-xmlpatterns libqtcore4 libqtdbus4 libqtgui4 \
+      libqtwebkit-dev libqtwebkit4
+
+    # Chromium / Qt
+    sudo apt-get install -qq sudo apt-get install libssl-dev libxcursor-dev libxcomposite-dev libxdamage-dev libxrandr-dev libfontconfig1-dev libxss-dev libxtst-dev libpci-dev libcap-dev libsrtp0-dev
+    sudo apt-get install -qq dbus-x11 libxcomposite-dev libxtst-dev libpci-dev libcap-dev libegl1-mesa-dev gperf libasound2-dev
+    # for libdbus-1-dev
+    sudo apt-get install -qq libdbus-glib-1-dev
+
+    # sudo apt list --installed
+
+    # echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
+    # sudo service docker restart
+    # sleep 5
+    # sudo docker pull centos:centos${OS_VERSION}
+    echo "LDFLAGS : $LDFLAGS"
+  elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+    # This is where timeout is hiding
+    brew install coreutils ccache
+    brew install autoconf automake
+
+    BotEmptyUsrLocal
+    echo "CXX: $CXX"
+    echo "CC: $CC"
+
+    BotPlatformInstall
+  fi
+
+
+script:
+- |
+  echo "PkgConfig"
+  # PkgConfig
+  if [ $TRAVIS_OS_NAME == 'osx' ] ; then
+    export PATH=$BOT_ROOT/bin:$PATH
+    BotInstall_pkgconfig --with-internal-glib
+  fi
+
+  # PNG
+  BotInstall_png
+
+  # JPEG
+  BotInstall_jpeg
+
+  # GIF
+  BotInstall_gif
+
+  # TIFF
+  BotInstall_tiff
+
+  # Freetype
+  BotInstall_freetype
+
+  # Jpeg-2000
+  BotInstall_jpeg2000
+
+  # WebP
+  BotInstall_webp
+
+  # Snappy
+  BotInstall_snappy
+
+  # Ffmpeg
+  BotInstall_ffmpeg
+
+  # JsonCpp
+  BotInstall_jsoncpp
+
+  # QT-5
+  BotInstall_qt
+  #BotInstall_pyside
+
+  # RAW
+  BotInstall_libraw
+
+  # DCMTK
+  BotInstall_dcmtk
+
+  # boost
+  travis_wait 35 BotInstall_boost
+
+  echo "NumPy"
+  # NumPy
+  BotInstall_numpy
+
+  echo "HDF5"
+  # HDF5
+  BotInstall_hdf5
+
+  # Blosc
+  BotInstall_blosc
+
+  # GLEW
+  BotInstall_glew
+
+  # CLEW
+  BotInstall_clew
+
+  # GLFW
+  BotInstall_glfw
+
+  # TinyXML
+  BotInstall_tinyxml
+
+  # Yaml++
+  BotInstall_yamlxx
+
+  # PTEX
+  BotInstall_ptex
+
+  # OpenEXR
+  BotInstall_openexr
+
+  # OSD
+  rm -rf $BOT_ROOT/include/opensubdiv
+  BotInstall_osd
+
+  ### Alembic
+  BotInstall_alembic
+
+  # Field3D
+  BotInstall_field3D
+
+  # OpenVDB
+  BotInstall_openvdb
+
+  # OpenColorIO
+  BotInstall_ocio
+
+  # OpenImageIO
+  rm -rf $BOT_ROOT/include/OpenImageIO
+  export CXX="$COMPILER"
+  export CC="$CCOMPILER"
+  BotInstall_oiio -DUSE_CCACHE=ON
+  export CXX="ccache $COMPILER"
+  export CC="ccache $CCOMPILER"
+
+  # OpenColorIO.2
+  rm -rf "$BOT_ROOT/include/OpenColorIO"
+  rm -rf "/tmp/ocio"
+  BotInstall_ocio
+  mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
+
+  # OSL
+  BotInstall_osl
+
+  # Debug
+  ls -l $BOT_ROOT/include
+
+  echo $(uname -a)
+  if [ $(BotTimeRemaining 5) ]; then
+    if [ $TRAVIS_OS_NAME == 'linux' ]; then
+
+      docker run --privileged -d -ti -e "container=docker" -v /$HOME:/home/travis -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
+      DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
+      docker logs $DOCKER_CONTAINER_ID
+      echo "uname -a; ls -l /home; exit" | docker run -ti $DOCKER_CONTAINER_ID /bin/bash
+      docker exec -ti $DOCKER_CONTAINER_ID yum -y install gcc-c++
+      docker exec -ti $DOCKER_CONTAINER_ID g++ --version
+      docker ps -a
+      docker stop $DOCKER_CONTAINER_ID
+      docker rm -v $DOCKER_CONTAINER_ID
+    elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/bin"
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/bin"
+      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/bin"
+      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/lib"
+      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/bin"
+      BotRestoreUsrLocal
+    fi
+  fi
+
+before_deploy:
+- |
+  export BOT_DEPLOY=${BOT_ROOT}/../$(basename $TRAVIS_REPO_SLUG)-${TRAVIS_OS_NAME}.txz
+  #BZIP=-9 tar -cSjC ${BOT_ROOT} . > ${BOT_DEPLOY}
+  XZ_OPT=-9e travis_wait tar -cSJf ${BOT_DEPLOY} -C ${BOT_ROOT} .
+
+deploy:
+  skip_cleanup: true
+  provider: releases
+  file: '${BOT_DEPLOY}'
+  api_key:
+    secure: "Lo+BOwacQViHom4DkhrnrVeJ2DoBgqj1joa+Yc0VcphcaKAzgZHLIHE4KMJ5j65iz9uFkqrkGNCvMyFBK/GMIKK9WpM/rx/93TnNZaYIHAlv7BTXgWIiwcgpM07r3L49Kto5JW5WkmYih5oM0CeUfVobYWsH4Z4a0/41srWieVZYY+/aWOXQqnfmaFTo9jCyVXkimOlS7R21gdktSzqlt0WSBjQTP02+sh/OZ+qiQB1DjITjdbbxqrkqKyeXv7T8tvVFwdejrNpvt/9ipnZKisKNxF8rZ/AOVEhoLnCPwqQCeEA4kbcZzPwdl6nEi4pjspD+Pf1HRcPMhdgU2DJ6V7GvLODZUWZdT/2G0NCqyxf65rm/U2N7ucrirGx4mpGbcGIkpknW99Kj0GZ5mBLaOJksKK6LMtQcDTl9gmZSadgVK6LtUnEvfzKdGWUUtJEp/thjTI8GbqNefL3jOHMU1RofT1+sK+RUHQ2bLkp0a3ScLGlJVMd5yQ0etBPT9BkOOyCLZZOIgV3uLi+bz+pt2Wtcw1AKOVvMMKio7LrNt3RqX7hlq3QgpwGwc3uCKpheMs23NVYldIhj18G7Ba7F9kTShOPASszMaoYpnJ/KwaPqYWFLl3c7SVgte2oxwg4x7GJeI3R+OK3IEiSeMAB7NOnml3Oda1DwnmCwk36/svA="
+  on:
+    branch: master
+    repo: $TRAVIS_REPO_SLUG
+    # tags: true
+    # condition: $TRAVIS_TAG != ""
