@@ -255,6 +255,17 @@ function BotInstall_pkgconfig {
 
 function BotInstall_boost {
   if [ ! $(BotTimeRemaing 15) ] || [ $(BotHasInclude boost) ]; then
+    BotInstallPathID recurse libboost_chrono.dylib libboost_container.dylib libboost_context.dylib \
+      libboost_coroutine.dylib libboost_date_time.dylib libboost_filesystem.dylib \
+      libboost_graph.dylib libboost_iostreams.dylib libboost_locale.dylib \
+      libboost_log_setup.dylib libboost_log.dylib libboost_math_c99.dylib \
+      libboost_math_c99f.dylib libboost_math_c99l.dylib libboost_math_tr1.dylib \
+      libboost_math_tr1f.dylib libboost_math_tr1l.dylib libboost_numpy.dylib \
+      libboost_prg_exec_monitor.dylib libboost_program_options.dylib \
+      libboost_python.dylib libboost_random.dylib libboost_regex.dylib \
+      libboost_serialization.dylib libboost_signals.dylib libboost_system.dylib \
+      libboost_thread.dylib libboost_timer.dylib libboost_type_erasure.dylib \
+      libboost_unit_test_framework.dylib libboost_wave.dylib libboost_wserialization.dylib
     BotLog "Using cached boost"
     return 0;
   fi
