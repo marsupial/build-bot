@@ -329,6 +329,9 @@ function BotPlatformInstall {
       local vol=`BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg`
       sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     fi
+ls -l /usr/local
+ls -l /usr/local/lib
+ls -l /usr/local/include
 
     if [[ 0 -eq 1 ]]; then
       # Intel TBB
