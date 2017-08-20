@@ -177,9 +177,11 @@ function BotRestoreUsrLocal {
   sudo mv /usr/local.bak /usr/local
 }
 
-function BotMvLibAndInclude {
-  rsync -a "$1/lib" "$2/"
-  rsync -a "$1/include" "$2/"
+function BotRsyncToDir {
+  local dst="$1"; shift;
+  for f in $@; do
+    rsync -a "$f" "$dst"
+  done
 }
 
 function BotMountDMG {
@@ -328,11 +330,13 @@ function BotPlatformInstall {
       sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     fi
 
-    # Intel TBB
-    local USD_TBB=tbb2017_20161128oss
-    #USD_TBB=tbb2017_20161004oss
-    local TBB_URL=https://www.threadingbuildingblocks.org/sites/default/files/software_releases/mac/${USD_TBB}_osx.tgz
-    BotMvLibAndInclude `BotExtractUrl tbb $TBB_URL` "$BOT_ROOT"
+    if [[ 0 -eq 1 ]]; then
+      # Intel TBB
+      local USD_TBB=tbb2017_20161128oss
+      #USD_TBB=tbb2017_20161004oss
+      local TBB_URL=https://www.threadingbuildingblocks.org/sites/default/files/software_releases/mac/${USD_TBB}_osx.tgz
+      BotMvLibAndInclude `BotExtractUrl tbb $TBB_URL` "$BOT_ROOT"
+    fi
 
     if [[ 0 -eq 1 ]]; then
       # QT 4.8
@@ -1055,5 +1059,38 @@ function BotInstall_libgit {
   BotCmakeInstallArk libgit https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz "$BOT_ROOT" $@
 }
 
+function BotInstall_tbb {
+  case `BotInstallCheckFlags "$1" tbb` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
 
+  local TBB_VERS="$1";
+  if [[ -z $TBB_VERS ]]; then TBB_VERS=tbb2017_20170604oss; fi
+
+  #TBB_VERS=tbb2017_20161128oss
+  #TBB_VERS=tbb2017_20161004oss
+  #TBB_VERS=tbb43_20141023oss
+  #https://www.threadingbuildingblocks.org/sites/default/files/software_releases/mac/${TBB_VERS}_osx.tgz
+  #https://www.threadingbuildingblocks.org/sites/default/files/software_releases/linux/tbb43_20141023oss_lin.tgz -O /tmp/tbb.tgz;
+  #https://www.threadingbuildingblocks.org/sites/default/files/software_releases/linux/tbb2017_20161128oss_lin.tgz
+
+  local libs
+  local plat
+  if [[ $BOT_OS_NAME == 'linux' ]]; then
+    plat=lin
+    libs=intel64/gcc4.7
+  else
+    plat=mac
+    libs=lib
+  fi
+
+  pushd "$(BotExtractUrl tbb https://github.com/01org/tbb/releases/download/2017_U7/${TBB_VERS}_${plat}.tgz)"
+    #BotRunCommand python python/setup.py install --prefix="$BOT_ROOT"
+    BotRsyncToDir "$BOT_ROOT/" include $libs
+  popd
+  rm -f "$BOT_ROOT/lib/index.html"
+  rm -f "$BOT_ROOT/include/index.html"
+}
 
