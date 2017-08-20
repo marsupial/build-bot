@@ -206,22 +206,23 @@ script:
   # OpenVDB
   BotInstall_openvdb
 
-  # OpenColorIO
-  BotInstall_ocio
+  if [[ $(BotInstallCheckFlags "" OpenImageIO) -ne 0 ]]; then
+    # OpenColorIO
+    BotInstall_ocio
 
-  # OpenImageIO
-  rm -rf $BOT_ROOT/include/OpenImageIO
-  export CXX="$COMPILER"
-  export CC="$CCOMPILER"
-  BotInstall_oiio -DUSE_CCACHE=ON
-  export CXX="ccache $COMPILER"
-  export CC="ccache $CCOMPILER"
+    # OpenImageIO
+    export CXX="$COMPILER"
+    export CC="$CCOMPILER"
+    BotInstall_oiio -DUSE_CCACHE=ON
+    export CXX="ccache $COMPILER"
+    export CC="ccache $CCOMPILER"
 
-  # OpenColorIO.2
-  rm -rf "$BOT_ROOT/include/OpenColorIO"
-  rm -rf "/tmp/ocio"
-  BotInstall_ocio
-  mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
+    # OpenColorIO.2
+    rm -rf "$BOT_ROOT/include/OpenColorIO"
+    rm -rf "/tmp/ocio"
+    BotInstall_ocio
+    mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
+  fi
 
   # OSL
   BotInstall_osl
