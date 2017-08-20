@@ -330,7 +330,6 @@ function BotPlatformInstall {
       local vol=`BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg`
       sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     fi
-    cuda="/usr/local/cuda"
     ls -l /usr/local/cuda
     ls -l /usr/local/cuda/*
 
@@ -357,10 +356,11 @@ function BotPlatformInstall {
   else
     cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
     sudo $cuda --silent --toolkit # --toolkitpath=/tmp/CUDALINX
-    cuda="/usr/local/cuda-7.5"
+    sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
   fi
   if [[ $cuda ]]; then
     mkdir -p "$BOT_ROOT/include/cuda"
+    cuda="/usr/local/cuda"
     BotRsyncToDir "$BOT_ROOT/include/cuda" "$cuda/include/"
     BotRsyncToDir "$BOT_ROOT/lib/" $cuda/lib/libcuda*
   fi
@@ -801,7 +801,7 @@ function BotInstall_openvdb {
     -DHDF5_INCLUDE_DIRS="$BOT_ROOT/include" -DHDF5_LIBRARIES="$BOT_ROOT/lib" \
     -DBLOSC_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DOPENEXR_LOCATION="$BOT_ROOT" -DILMBASE_LOCATION="$BOT_ROOT" \
-    $@
+    -DOPENVDB_BUILD_UNITTESTS=OFF $@
 }
 
 function BotInstall_png {

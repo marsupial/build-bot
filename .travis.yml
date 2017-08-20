@@ -85,6 +85,8 @@ before_install:
     # openvdb
     sudo apt-get install -qq libcppunit-dev
 
+    sudo apt-get remove llvm-3.5 llvm-3.5-dev clang-3.5 clang-3.5-dev
+
     # partio
     sudo apt-get install -qq swig freeglut3-dev
 
@@ -92,6 +94,8 @@ before_install:
     export LLVM_VERSION=3.9.0
     export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
     export LLVM_ROOT="$LLVM_DIRECTORY"
+    export LLVM_ROOT_DIR="$LLVM_DIRECTORY"
+    ls -l "$LLVM_DIRECTORY"
 
     # sudo apt list --installed
 
@@ -238,7 +242,7 @@ script:
 
   # OSL
   sudo easy_install pip
-  sudo pip install sip
+  sudo pip install SIP
   BotInstall_seexpr
   BotInstall_partio
   BotInstall_osl
