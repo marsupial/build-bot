@@ -82,6 +82,13 @@ before_install:
     # for libdbus-1-dev
     sudo apt-get install -qq libdbus-glib-1-dev
 
+    # openvdb
+    sudo apt-get install -qq libcppunit-dev
+
+    # partio
+    sudo apt-get install -qq swig
+
+    # OSL
     export LLVM_VERSION=3.9.0
     export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
 
@@ -97,6 +104,11 @@ before_install:
     brew install coreutils ccache
     brew install autoconf automake
 
+    # openvdb
+    brew install cppunit
+    # partio
+    brew install swig
+    # osl
     brew install llvm
 
     BotEmptyUsrLocal
@@ -105,7 +117,6 @@ before_install:
 
     BotPlatformInstall
   fi
-
 
 script:
 - |
@@ -225,6 +236,7 @@ script:
   fi
 
   # OSL
+  sudo pip install sip
   BotInstall_seexpr
   BotInstall_partio
   BotInstall_osl
