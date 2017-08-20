@@ -144,7 +144,7 @@ script:
   BotInstall_ffmpeg
 
   # JsonCpp
-  BotInstall_jsoncpp
+  BotInstall_jsoncpp --force
 
   # QT-5
   BotInstall_qt
