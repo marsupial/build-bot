@@ -86,11 +86,12 @@ before_install:
     sudo apt-get install -qq libcppunit-dev
 
     # partio
-    sudo apt-get install -qq swig
+    sudo apt-get install -qq swig freeglut3-dev
 
     # OSL
     export LLVM_VERSION=3.9.0
     export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
+    export LLVM_ROOT="$LLVM_DIRECTORY"
 
     # sudo apt list --installed
 
