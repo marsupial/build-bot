@@ -194,8 +194,8 @@ script:
   # TBB
   BotInstall_tbb
 
-  # OSD
-  BotInstall_osd
+  # OpenSubdiv
+  BotInstall_osd --force
 
   ### Alembic
   BotInstall_alembic
