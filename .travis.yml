@@ -237,6 +237,7 @@ script:
   fi
 
   # OSL
+  sudo easy_install pip
   sudo pip install sip
   BotInstall_seexpr
   BotInstall_partio
