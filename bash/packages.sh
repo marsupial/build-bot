@@ -323,15 +323,16 @@ function BotInstallNameChange {
 }
 
 function BotPlatformInstall {
+  local cuda=""
   if [[ $BOT_OS_NAME == 'osx' ]]; then
     # CUDA
     if [ ! -d /usr/local/cuda ]; then
       local vol=`BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg`
       sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     fi
-ls -l /usr/local
-ls -l /usr/local/lib
-ls -l /usr/local/include
+    cuda="/usr/local/cuda"
+    ls -l /usr/local/cuda
+    ls -l /usr/local/cuda/*
 
     if [[ 0 -eq 1 ]]; then
       # Intel TBB
@@ -353,6 +354,15 @@ ls -l /usr/local/include
       pkgutil --expand $pkg "$TMPDIR/PySide"
       BotInstallPackages "$TMPDIR/PySide" Payload
     fi
+  else
+    cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
+    sudo $cuda --silent --toolkit # --toolkitpath=/tmp/CUDALINX
+    cuda="/usr/local/cuda-7.5"
+  fi
+  if [[ $cuda ]]; then
+    mkdir -p "$BOT_ROOT/include/cuda"
+    BotRsyncToDir "$BOT_ROOT/include/cuda" "$cuda/include/"
+    BotRsyncToDir "$BOT_ROOT/lib/" $cuda/lib/libcuda*
   fi
 }
 
@@ -1042,6 +1052,27 @@ function BotInstall_ocio {
   # -DUSE_EXTERNAL_YAML=ON -DUSE_EXTERNAL_TINYXML=ON
 }
 
+
+function BotInstall_seexpr {
+  case `BotInstallCheckFlags "$1" seexpr` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  BotCmakeInstallGit seexpr https://github.com/wdas/SeExpr.git "$BOT_ROOT" $@
+}
+
+function BotInstall_partio {
+  case `BotInstallCheckFlags "$1" partio` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  BotCmakeInstallGit partio https://github.com/wdas/partio.git "$BOT_ROOT" $@
+}
+
 function BotInstall_osl {
   case `BotInstallCheckFlags "$1" OpenShadingLanguage` in
     0) return 0 ;;
@@ -1050,7 +1081,8 @@ function BotInstall_osl {
   esac
 
   #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.8.10.tar.gz "$BOT_ROOT" $@
-  BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DUSE_CPP=11 $@
+  #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DUSE_CPP=11 $@
+  BotCmakeInstallGit osl https://github.com/marsupial/OpenShadingLanguage.git "$BOT_ROOT" -DUSE_CPP=11 $@
 }
 
 function BotInstall_libgit {
@@ -1084,7 +1116,7 @@ function BotInstall_tbb {
   local plat
   if [[ $BOT_OS_NAME == 'linux' ]]; then
     plat=lin
-    libs=intel64/gcc4.7
+    libs=lib/intel64/gcc4.7
   else
     plat=mac
     libs=lib

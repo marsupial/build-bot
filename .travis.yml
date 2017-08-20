@@ -225,6 +225,8 @@ script:
   fi
 
   # OSL
+  BotInstall_seexpr
+  BotInstall_partio
   BotInstall_osl
 
   # LibGit2
@@ -237,6 +239,7 @@ script:
   if [ $(BotTimeRemaining 5) ]; then
     if [ $TRAVIS_OS_NAME == 'linux' ]; then
       BotInstallPatchElf
+      export PATH="$PATH:$BOT_ROOT/bin"
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
       BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins"/*/*.so
