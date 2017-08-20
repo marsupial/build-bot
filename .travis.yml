@@ -82,6 +82,9 @@ before_install:
     # for libdbus-1-dev
     sudo apt-get install -qq libdbus-glib-1-dev
 
+    export LLVM_VERSION=3.9.0
+    export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
+
     # sudo apt list --installed
 
     # echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
@@ -93,6 +96,8 @@ before_install:
     # This is where timeout is hiding
     brew install coreutils ccache
     brew install autoconf automake
+
+    brew install llvm
 
     BotEmptyUsrLocal
     echo "CXX: $CXX"
@@ -218,6 +223,9 @@ script:
 
   # OSL
   BotInstall_osl
+
+  # LibGit2
+  BotInstall_libgit
 
   # Debug
   ls -l $BOT_ROOT/include

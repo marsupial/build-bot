@@ -1012,7 +1012,7 @@ function BotInstall_jsoncpp {
     2) ;;
   esac
 
-  BotCmakeInstallArk jsoncpp https://github.com/open-source-parsers/jsoncpp/archive/1.8.1.tar.gz "$BOT_ROOT" -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF $@
+  BotCmakeInstallArk jsoncpp https://github.com/open-source-parsers/jsoncpp/archive/1.8.1.tar.gz "$BOT_ROOT" $@
   BotInstallStaticToDynlib jsoncpp
 }
 
@@ -1040,5 +1040,18 @@ function BotInstall_osl {
     2) ;;
   esac
 
-  BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF $@
+  BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" $@
 }
+
+function BotInstall_libgit {
+  case `BotInstallCheckFlags "$1" git2.h` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  BotCmakeInstallArk libgit https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz "$BOT_ROOT" $@
+}
+
+
+
