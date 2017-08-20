@@ -614,7 +614,7 @@ function BotInstall_osd {
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
     -DNO_REGRESSION=1 -DCUDA_NVCC_FLAGS="-ccbin $CCOMPILER" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
-    -DNO_DOC=1 $platformFlags $@
+    -DNO_DOC=1 $platformFlags $@ -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 VERBOSE=1
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
