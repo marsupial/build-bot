@@ -195,7 +195,6 @@ script:
   BotInstall_tbb
 
   # OSD
-  rm -rf $BOT_ROOT/include/opensubdiv
   BotInstall_osd
 
   ### Alembic
