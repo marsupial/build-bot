@@ -233,6 +233,7 @@ script:
   echo $(uname -a)
   if [ $(BotTimeRemaining 5) ]; then
     if [ $TRAVIS_OS_NAME == 'linux' ]; then
+      BotInstallPatchElf
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
       BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins"/*/*.so

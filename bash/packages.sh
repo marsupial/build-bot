@@ -321,8 +321,6 @@ function BotInstallNameChange {
 }
 
 function BotPlatformInstall {
-return 0;
-
   if [[ $BOT_OS_NAME == 'osx' ]]; then
     # CUDA
     if [ ! -d /usr/local/cuda ]; then
@@ -337,8 +335,7 @@ return 0;
     BotMvLibAndInclude `BotExtractUrl tbb $TBB_URL` "$BOT_ROOT"
 
     if [[ 0 -eq 1 ]]; then
-
-      # QT
+      # QT 4.8
       local vol=`BotMountURL http://qt.mirror.constant.com/archive/qt/4.8/4.8.6/qt-opensource-mac-4.8.6-1.dmg`
       QT_PKGS="${vol}/packages/Qt_"
       QT_ARK=".pkg/Contents/Archive.pax.gz"
@@ -591,11 +588,16 @@ function BotInstall_osd {
     2) ;;
   esac
 
+  local platformFlags=""
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    platformFlags="$platformFlags -DNO_CLEW=ON"
+  fi
+
   # https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_1_1.tar.gz
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
     -DNO_REGRESSION=1 -DCUDA_NVCC_FLAGS="-ccbin $CCOMPILER" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
-    -DNO_DOC=1 $@
+    -DNO_DOC=1 $platformFlags $@
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
