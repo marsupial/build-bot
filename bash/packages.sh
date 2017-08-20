@@ -330,8 +330,6 @@ function BotPlatformInstall {
       local vol=`BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg`
       sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     fi
-    ls -l /usr/local/cuda
-    ls -l /usr/local/cuda/*
 
     if [[ 0 -eq 1 ]]; then
       # Intel TBB
@@ -797,11 +795,27 @@ function BotInstall_openvdb {
   esac
 
   BotInstall_blosc
+
+  export GLFW3_ROOT="$BOT_ROOT"
+  export CPPUNIT_ROOT="/usr/local"
+  export TBB_ROOT="$BOT_ROOT"
+  local cxxflags="$CXXFLAGS"
+  export CXXFLAGS="$CXXFLAGS -std=c++11"
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    CXXFLAGS="$CXXFLAGS -stlib=libc++"
+  fi
+
   BotCmakeInstallArk openvdb https://github.com/dreamworksanimation/openvdb/archive/v4.0.2.tar.gz "$BOT_ROOT" \
     -DHDF5_INCLUDE_DIRS="$BOT_ROOT/include" -DHDF5_LIBRARIES="$BOT_ROOT/lib" \
     -DBLOSC_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DOPENEXR_LOCATION="$BOT_ROOT" -DILMBASE_LOCATION="$BOT_ROOT" \
-    -DOPENVDB_BUILD_UNITTESTS=OFF $@
+    -DTBB_LIBRARYDIR="$TBB_ROOT/lib" -DUSE_GLFW3=ON -DGLFW3_USE_STATIC_LIBS=OFF \
+    -DOPENVDB_BUILD_UNITTESTS=OFF -DCMAKE_CXX_FLAGS=-std=c++11 $@
+
+  unset GLFW3_ROOT
+  unset CPPUNIT_ROOT
+  unset TBB_ROOT
+  export CXXFLAGS="$cxxflags"
 }
 
 function BotInstall_png {
