@@ -209,19 +209,29 @@ function BotHasInclude {
   fi
 }
 
-function BotMachOFiles {
-  if [[ -f "$1" ]]; then
-    if [[ `file $1 | awk 'NR==1{print $2}'` == "Mach-O" ]]; then
-        echo $1
+function BotBinaryObjFiles {
+  local fmt="$1";
+  local path="$2";
+  if [[ -f $path ]]; then
+    if [[ `file "$path" | awk 'NR==1{print $2}'` == $fmt ]]; then
+        echo "$path"
     fi
     return
   fi
 
-  for f in "$1/"*; do
-    if [[ ! -h $f ]] && [[ `file $f | awk 'NR==1{print $2}'` == "Mach-O" ]]; then
+  for f in "$path/"*; do
+    if [[ ! -h $f ]] && [[ `file $f | awk 'NR==1{print $2}'` == $fmt ]]; then
       echo $f
     fi
   done
+}
+
+function BotMachOFiles {
+  BotBinaryObjFiles "Mach-O" $@
+}
+
+function BotELFFiles {
+  BotBinaryObjFiles "ELF" $@
 }
 
 function BotInstallPathID {
@@ -272,6 +282,38 @@ function BotInstallNameChangePrefix {
       done
     done
   done
+}
+
+function BotRPathEdit {
+  local rpath="$1"; shift;
+  for arg in $@; do
+    for file in `BotELFFiles $arg`; do
+      patchelf --force-rpath --remove-rpath "$file"
+      patchelf --set-rpath "$rpath" "$file"
+    done
+  done
+}
+
+function BotInstallPatchElf {
+  if [[ ! -z $(BotTestBin $BOT_ROOT/bin/patchelf) ]]; then
+    alias patchelf=$BOT_ROOT/bin/patchelf
+    echo "Found installed patchelf: $BOT_ROOT/bin/patchelf"
+    return 0;
+  fi
+
+  if [[ ! -z $(BotTestBin patchelf) ]]; then return 0; fi
+
+  sudo apt-get install patchelf
+  if [ $? -eq 0 ]; then return 0; fi
+
+  case `BotInstallCheckFlags "$1" ../bin/patchelf` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  BotMakeBuildArk patchelf https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 "$BOT_ROOT" $@
+  alias patchelf=$BOT_ROOT/bin/patchelf
 }
 
 function BotInstallNameChange {

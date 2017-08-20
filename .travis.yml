@@ -225,6 +225,10 @@ script:
   echo $(uname -a)
   if [ $(BotTimeRemaining 5) ]; then
     if [ $TRAVIS_OS_NAME == 'linux' ]; then
+      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
+      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
+      BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins"/*/*.so
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' "$BOT_ROOT/lib/python2.7/site-packages/PySide2/"*.so
 
       docker run --privileged -d -ti -e "container=docker" -v /$HOME:/home/travis -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
       DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
