@@ -93,7 +93,7 @@ function BotRunCommand {
 }
 
 function BotBuildTarget {
-  BotRunCommand make -j $BOT_JOBS $@ VERBOSE=1
+  BotRunCommand make -j $BOT_JOBS $@ # VERBOSE=1
 }
 
 function BotCmakeBuildDir {
@@ -597,7 +597,7 @@ function BotInstall_osd {
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
     -DNO_REGRESSION=1 -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
-    -DNO_DOC=1 -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 \
+    -DNO_DOC=1 \
     -DCUDA_TOOLKIT_ROOT_DIR="$CUDA_TOOLKIT_ROOT_DIR" $platformFlags $@
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
