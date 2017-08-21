@@ -1147,6 +1147,7 @@ function BotInstall_cuda {
   else
     cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
     ls -l /tmp
+    chmod 755 $cuda
     sudo $cuda --silent --toolkit # --toolkitpath=
     sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
   fi
