@@ -1084,7 +1084,8 @@ function BotInstall_osl {
 
   #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.8.10.tar.gz "$BOT_ROOT" $@
   #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DUSE_CPP=11 $@
-  BotCmakeInstallGit osl https://github.com/marsupial/OpenShadingLanguage.git "$BOT_ROOT" -DUSE_CPP=11 $@
+  BotCmakeInstallGit osl https://github.com/marsupial/OpenShadingLanguage.git \
+    "$BOT_ROOT" -DUSE_CPP=11 -DLLVM_DIRECTORY="$LLVM_DIRECTORY" $@
 }
 
 function BotInstall_libgit {
