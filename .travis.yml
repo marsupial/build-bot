@@ -305,7 +305,7 @@ before_deploy:
 - |
   export BOT_DEPLOY=${BOT_ROOT}/../$(basename $TRAVIS_REPO_SLUG)-${TRAVIS_OS_NAME}.txz
   #BZIP=-9 tar -cSjC ${BOT_ROOT} . > ${BOT_DEPLOY}
-  XZ_OPT=-9e travis_wait tar -cSJf ${BOT_DEPLOY} -C ${BOT_ROOT} .
+  XZ_OPT=-9e travis_wait 30 tar -cSJf ${BOT_DEPLOY} -C ${BOT_ROOT} .
 
 deploy:
   skip_cleanup: true
