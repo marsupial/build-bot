@@ -100,7 +100,7 @@ function BotCmakeBuildDir {
   local TARGET=$1; shift;
   local PREFIX=$1; shift;
   mkdir tmpbuild && pushd tmpbuild
-    BotLog "$CMAKE_FLAGS -DCMAKE_PREFIX_PATH=$PREFIX -DCMAKE_INSTALL_PREFIX=$PREFIX $@"
+    BotLog "cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH=$PREFIX -DCMAKE_INSTALL_PREFIX=$PREFIX $@"
     cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH=$PREFIX -DCMAKE_INSTALL_PREFIX=$PREFIX $@
     BotBuildTarget $TARGET
   popd
@@ -595,7 +595,7 @@ function BotInstall_osd {
 
   # https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_1_1.tar.gz
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
-    -DNO_REGRESSION=1 -DCUDA_HOST_COMPILER="$CCOMPILER" \
+    -DNO_REGRESSION=1 -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DNO_DOC=1 -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 \
     -DCUDA_TOOLKIT_ROOT_DIR="$CUDA_TOOLKIT_ROOT_DIR" $platformFlags $@
@@ -1061,7 +1061,8 @@ function BotInstall_seexpr {
     2) ;;
   esac
 
-  BotCmakeInstallGit seexpr https://github.com/wdas/SeExpr.git "$BOT_ROOT" $@
+  BotCmakeInstallGit seexpr https://github.com/wdas/SeExpr.git "$BOT_ROOT" \
+    -DENABLE_LLVM_BACKEND=OFF -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm" $@
 }
 
 function BotInstall_partio {
@@ -1160,4 +1161,3 @@ function BotInstall_cuda {
     BotRsyncToDir "$BOT_ROOT/lib/" $CUDA_TOOLKIT_ROOT_DIR/lib/libcuda*
   fi
 }
-

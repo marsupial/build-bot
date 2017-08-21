@@ -86,6 +86,7 @@ before_install:
     sudo apt-get install -qq libcppunit-dev
 
     sudo apt-get remove llvm-3.5 llvm-3.5-dev clang-3.5 clang-3.5-dev
+    sudo apt-get remove llvm-3.4 llvm-3.4-dev clang-3.4 clang-3.4-dev
 
     # partio
     sudo apt-get install -qq swig freeglut3-dev python-sip
