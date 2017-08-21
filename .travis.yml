@@ -94,6 +94,9 @@ before_install:
     export LLVM_VERSION=3.9.0
     export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
 
+    export BOT_CPP_UNIT=/
+    export BOT_SWIG_BIN=swig
+
     # sudo apt list --installed
 
     # echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
@@ -122,17 +125,16 @@ before_install:
     echo "CC: $CC"
 
     BotPlatformInstall
+    export BOT_CPP_UNIT=/usr/local/opt/cppunit
+    export BOT_SWIG_BIN=/usr/local/opt/swig/bin
   fi
 
-  echo "CPP UNIT"
-  ls -l /usr/local/Cellar/cppunit/1.14.0
-  ls -l /usr/local/opt/cppunit
-  echo "SWIG"
-  ls -l /usr/local/Cellar/swig/3.0.12
-  ls -l /usr/local/opt/swig
-  echo "LLVM"
+  echo "DUMPEY DUMP"
   ls -l /usr/local/opt/llvm
+  ls -l /usr/local/opt/llvm/lib
   ls -l "$LLVM_DIRECTORY"
+  ls -l "$LLVM_DIRECTORY/lib"
+  ls -l "$LLVM_DIRECTORY/lib/cmake"
 
 script:
 - |
