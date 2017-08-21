@@ -1062,7 +1062,7 @@ function BotInstall_seexpr {
   esac
 
   BotCmakeInstallGit seexpr https://github.com/wdas/SeExpr.git "$BOT_ROOT" \
-    -DENABLE_LLVM_BACKEND=OFF -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm" $@
+    -DSEEXPR_ENABLE_LLVM_BACKEND=0 -DENABLE_LLVM_BACKEND=OFF -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm" $@
 }
 
 function BotInstall_partio {
