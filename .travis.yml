@@ -93,7 +93,6 @@ before_install:
     # OSL
     export LLVM_VERSION=3.9.0
     export LLVM_DIRECTORY=$(BotExtractUrl llvm http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-14.04.tar.xz)
-    ls -l "$LLVM_DIRECTORY"
 
     # sudo apt list --installed
 
@@ -124,6 +123,16 @@ before_install:
 
     BotPlatformInstall
   fi
+
+  echo "CPP UNIT"
+  ls -l /usr/local/Cellar/cppunit/1.14.0
+  ls -l /usr/local/opt/cppunit
+  echo "SWIG"
+  ls -l /usr/local/Cellar/swig/3.0.12
+  ls -l /usr/local/opt/swig
+  echo "LLVM"
+  ls -l /usr/local/opt/llvm
+  ls -l "$LLVM_DIRECTORY"
 
 script:
 - |
@@ -235,7 +244,7 @@ script:
   export CC="ccache $CCOMPILER"
 
   # OpenColorIO with OpenImageIO support
-  if [[ ! $(ociobuilt) ]]; then
+  if [[ ! $ociobuilt ]]; then
     rm -rf "$BOT_ROOT/include/OpenColorIO"
     rm -rf "/tmp/ocio"
     BotInstall_ocio

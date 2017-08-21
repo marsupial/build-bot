@@ -93,7 +93,7 @@ function BotRunCommand {
 }
 
 function BotBuildTarget {
-  BotRunCommand make -j $BOT_JOBS $@
+  BotRunCommand make -j $BOT_JOBS $@ VERBOSE=1
 }
 
 function BotCmakeBuildDir {
@@ -323,14 +323,7 @@ function BotInstallNameChange {
 }
 
 function BotPlatformInstall {
-  local cuda=""
   if [[ $BOT_OS_NAME == 'osx' ]]; then
-    # CUDA
-    if [ ! -d /usr/local/cuda ]; then
-      local vol=`BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg`
-      sudo $vol/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
-    fi
-
     if [[ 0 -eq 1 ]]; then
       # Intel TBB
       local USD_TBB=tbb2017_20161128oss
@@ -351,16 +344,6 @@ function BotPlatformInstall {
       pkgutil --expand $pkg "$TMPDIR/PySide"
       BotInstallPackages "$TMPDIR/PySide" Payload
     fi
-  else
-    cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
-    sudo $cuda --silent --toolkit # --toolkitpath=/tmp/CUDALINX
-    sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
-  fi
-  if [[ $cuda ]]; then
-    mkdir -p "$BOT_ROOT/include/cuda"
-    cuda="/usr/local/cuda"
-    BotRsyncToDir "$BOT_ROOT/include/cuda" "$cuda/include/"
-    BotRsyncToDir "$BOT_ROOT/lib/" $cuda/lib/libcuda*
   fi
 }
 
@@ -603,6 +586,8 @@ function BotInstall_osd {
     2) ;;
   esac
 
+  BotInstall_cuda
+
   local platformFlags=""
   if [[ $BOT_OS_NAME == 'osx' ]] ; then
     platformFlags="$platformFlags -DNO_CLEW=ON"
@@ -612,7 +597,8 @@ function BotInstall_osd {
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
     -DNO_REGRESSION=1 -DCUDA_NVCC_FLAGS="-ccbin $CCOMPILER" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
-    -DNO_DOC=1 $platformFlags $@ -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 VERBOSE=1
+    -DNO_DOC=1 -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 \
+    -DCUDA_TOOLKIT_ROOT_DIR="$CUDA_TOOLKIT_ROOT_DIR" $platformFlags $@
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
@@ -687,8 +673,8 @@ function BotInstall_openexr {
     popd
     mkdir "${BOT_ROOT}/include/PyImath"
     cp PyIlmBase/PyImath/*.h "${BOT_ROOT}/include/PyImath/"
-    ls -l PyIlmBase/PyImath/*.h
-    ls -l ${BOT_ROOT}/include/PyImath/
+    #ls -l PyIlmBase/PyImath/*.h
+    #ls -l ${BOT_ROOT}/include/PyImath/
   popd
 }
 
@@ -1143,5 +1129,32 @@ function BotInstall_tbb {
   popd
   rm -f "$BOT_ROOT/lib/index.html"
   rm -f "$BOT_ROOT/include/index.html"
+
+  ls -l $BOT_ROOT/lib
+}
+
+function BotInstall_cuda {
+  case `BotInstallCheckFlags "$1" cuda` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  local cuda=""
+  if [[ $BOT_OS_NAME == 'osx' ]]; then
+    local cuda=$(BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg)
+    sudo $cuda/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
+  else
+    cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
+    sudo $cuda --silent --toolkit # --toolkitpath=
+    sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
+  fi
+
+  if [[ $cuda ]]; then
+    mkdir -p "$BOT_ROOT/include/cuda"
+    export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda"
+    BotRsyncToDir "$BOT_ROOT/include/cuda" "$CUDA_TOOLKIT_ROOT_DIR/include/"
+    BotRsyncToDir "$BOT_ROOT/lib/" $CUDA_TOOLKIT_ROOT_DIR/lib/libcuda*
+  fi
 }
 
