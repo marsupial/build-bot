@@ -276,8 +276,20 @@ script:
       export PATH="$PATH:$BOT_ROOT/bin"
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
       BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
-      BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins"/*/*.so
-      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' "$BOT_ROOT/lib/python2.7/site-packages/PySide2/"*.so
+
+      # Python libs
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../' $BOT_ROOT/lib/python2.7/site-packages/
+
+      # Qt
+      BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins/"*
+
+      # PySide -- remove
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/PySide2
+
+      # SeExpr
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/SeExprPy
 
       docker run --privileged -d -ti -e "container=docker" -v /$HOME:/home/travis -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
       DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')

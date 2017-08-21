@@ -318,6 +318,23 @@ function BotInstallPatchElf {
   alias patchelf=$BOT_ROOT/bin/patchelf
 }
 
+function BotFixSymlinks {
+  local path="$1"
+  pushd "$path"; shift;
+    path=$(pwd)
+    local files=$(echo "$@" | awk '{ print length($0) " " $0; }' | sort -r -n | cut -d ' ' -f 2-)
+    while [[ $# -gt 1 ]]; do
+      local this=${1#$path/}
+      if [[ ! -L $this ]]; then
+        local next=${2#$path/}
+        rm -rf "$this";
+        ln -s "$next" "$this"
+      fi
+      shift
+    done
+  popd
+}
+
 function BotInstallNameChange {
   BotInstallNameChangePrefix $BOT_ROOT/lib/ $@
 }
@@ -442,6 +459,10 @@ function BotInstall_pyside {
         install_name_tool -delete_rpath $buildDir $lib
       done
       BotInstallNameChangePrefix "@loader_path/../lib/" "@loader_path/../../../" "$BOT_ROOT/lib/python2.7/site-packages/PySide2"
+    else
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/PySide2
     fi
   popd
 }
@@ -602,6 +623,9 @@ function BotInstall_osd {
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
+  if [ $BOT_OS_NAME != 'linux' ]; then
+    mv $BOT_ROOT/lib/python2.7/pyopenvdb.so $BOT_ROOT/lib/python2.7/site-packages/
+  fi
 }
 
 function BotInstall_numpy {
@@ -1072,7 +1096,8 @@ function BotInstall_partio {
     2) ;;
   esac
 
-  BotCmakeInstallGit partio https://github.com/wdas/partio.git "$BOT_ROOT" $@
+  BotCmakeInstallGit partio https://github.com/marsupial/partio.git "$BOT_ROOT" \
+    -DSEEXPR_BASE="$BOT_ROOT" $@
 }
 
 function BotInstall_osl {
@@ -1153,12 +1178,14 @@ function BotInstall_cuda {
     chmod 755 $cuda
     sudo $cuda --silent --toolkit # --toolkitpath=
     sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
+    cuda=/usr/local/cuda/lib64
   fi
 
   if [[ $cuda ]]; then
     mkdir -p "$BOT_ROOT/include/cuda"
     export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda"
     BotRsyncToDir "$BOT_ROOT/include/cuda" "$CUDA_TOOLKIT_ROOT_DIR/include/"
-    BotRsyncToDir "$BOT_ROOT/lib/" $CUDA_TOOLKIT_ROOT_DIR/lib/libcuda*
+    if [[ ! $cuda ]]; then cuda=$CUDA_TOOLKIT_ROOT_DIR/lib; fi
+    BotRsyncToDir "$BOT_ROOT/lib/" $cuda/libcuda*
   fi
 }
