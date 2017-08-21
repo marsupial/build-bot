@@ -1125,7 +1125,8 @@ function BotInstall_tbb {
 
   pushd "$(BotExtractUrl tbb https://github.com/01org/tbb/releases/download/2017_U7/${TBB_VERS}_${plat}.tgz)"
     #BotRunCommand python python/setup.py install --prefix="$BOT_ROOT"
-    BotRsyncToDir "$BOT_ROOT/" include $libs
+    BotRsyncToDir "$BOT_ROOT/" include
+    BotRsyncToDir "$BOT_ROOT/lib/" $libs/lib*
   popd
   rm -f "$BOT_ROOT/lib/index.html"
   rm -f "$BOT_ROOT/include/index.html"
