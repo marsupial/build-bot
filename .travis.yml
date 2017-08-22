@@ -271,26 +271,8 @@ script:
 
   echo $(uname -a)
   if [ $(BotTimeRemaining 5) ]; then
+    BotPlatformCleanup
     if [ $TRAVIS_OS_NAME == 'linux' ]; then
-      BotInstallPatchElf
-      export PATH="$PATH:$BOT_ROOT/bin"
-      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
-      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
-
-      # Python libs
-      BotRPathEdit '$ORIGIN:$ORIGIN/../../' $BOT_ROOT/lib/python2.7/site-packages/
-
-      # Qt
-      BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins/"*
-
-      # PySide -- remove
-      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
-      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
-      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/PySide2
-
-      # SeExpr
-      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/SeExprPy
-
       docker run --privileged -d -ti -e "container=docker" -v /$HOME:/home/travis -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/htcondor-ce:rw  centos:centos${OS_VERSION}   /usr/sbin/init
       DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
       docker logs $DOCKER_CONTAINER_ID
@@ -301,14 +283,6 @@ script:
       docker stop $DOCKER_CONTAINER_ID
       docker rm -v $DOCKER_CONTAINER_ID
     elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
-      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/bin"
-      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/lib"
-      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/lib"
-      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/bin"
-      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/lib"
-      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/bin"
-      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/lib"
-      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/bin"
       BotRestoreUsrLocal
     fi
   fi

@@ -213,15 +213,15 @@ function BotHasInclude {
 
 function BotBinaryObjFiles {
   local fmt="$1";
-  local path="$2";
-  if [[ -f $path ]]; then
-    if [[ `file "$path" | awk 'NR==1{print $2}'` == $fmt ]]; then
-        echo "$path"
+  local fpath="$2";
+  if [[ -f $fpath ]]; then
+    if [[ `file "$fpath" | awk 'NR==1{print $2}'` == $fmt ]]; then
+        echo "$fpath"
     fi
     return
   fi
 
-  for f in "$path/"*; do
+  for f in "$fpath/"*; do
     if [[ ! -h $f ]] && [[ `file $f | awk 'NR==1{print $2}'` == $fmt ]]; then
       echo $f
     fi
@@ -337,6 +337,26 @@ function BotFixSymlinks {
 
 function BotInstallNameChange {
   BotInstallNameChangePrefix $BOT_ROOT/lib/ $@
+}
+
+function BotFixupPythonPaths {
+  local lpath=""
+  local arg0=""
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+     lpath='@loader_path'
+     cmd=BotInstallNameChangePrefix
+     arg0='@loader_path/../lib/'
+  else
+     lpath='$ORIGIN:$ORIGIN'
+     cmd=BotRPathEdit
+  fi
+  lpath="${lpath}/../../"
+
+  for fpath in $@; do
+    local cpath=$lpath
+    if [[ -d $fpath ]]; then cpath="${cpath}../"; fi
+    $cmd $arg0 "$cpath" "$fpath"
+  done
 }
 
 function BotPlatformInstall {
@@ -458,13 +478,12 @@ function BotInstall_pyside {
         install_name_tool -add_rpath "@loader_path" $lib
         install_name_tool -delete_rpath $buildDir $lib
       done
-      BotInstallNameChangePrefix "@loader_path/../lib/" "@loader_path/../../../" "$BOT_ROOT/lib/python2.7/site-packages/PySide2"
     else
       BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
       BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
-      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/PySide2
     fi
   popd
+  # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/PySide2"
 }
 
 function BotInstall_fixupqt {
@@ -623,9 +642,8 @@ function BotInstall_osd {
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
-  if [ $BOT_OS_NAME != 'linux' ]; then
-    mv $BOT_ROOT/lib/python2.7/pyopenvdb.so $BOT_ROOT/lib/python2.7/site-packages/
-  fi
+  mv $BOT_ROOT/lib/python2.7/pyopenvdb.${BOT_SHLIB} $BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so
+  # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so"
 }
 
 function BotInstall_numpy {
@@ -1017,6 +1035,10 @@ function BotInstall_oiio {
     -DILMBASE_PACKAGE_PREFIX="$BOT_ROOT" -DOPENEXR_INCLUDE_PATH="$BOT_ROOT/include" \
     -DFREETYPE_PATH="$BOT_ROOT" -DUSE_OPENSSL=1 $@
   # -DCMAKE_CXX_FLAGS="-Wno-misleading-indentation -Wno-placement-new"
+
+  mv $BOT_ROOT/lib/python./site-packages/OpenImageIO.so $BOT_ROOT/lib/python2.7/site-packages/
+  rm -rf $BOT_ROOT/lib/python.
+  # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/OpenImageIO.so"
 }
 
 function BotInstall_lcms2 {
@@ -1155,6 +1177,13 @@ function BotInstall_tbb {
     BotRsyncToDir "$BOT_ROOT/" include
     BotRsyncToDir "$BOT_ROOT/lib/" $libs/lib*
   popd
+
+  if [[ $BOT_OS_NAME == 'osx' ]]; then
+    BotInstallPathID recurse libtbb_debug.dylib libtbb_preview_debug.dylib \
+      libtbb_preview.dylib libtbb.dylib libtbbmalloc_debug.dylib \
+      libtbbmalloc_proxy_debug.dylib libtbbmalloc_proxy.dylib libtbbmalloc.dylib
+  fi
+
   rm -f "$BOT_ROOT/lib/index.html"
   rm -f "$BOT_ROOT/include/index.html"
 
@@ -1172,6 +1201,7 @@ function BotInstall_cuda {
   if [[ $BOT_OS_NAME == 'osx' ]]; then
     local cuda=$(BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg)
     sudo $cuda/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
+    sudo ln -s lib /usr/local/cuda/lib64
   else
     cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
     ls -l /tmp
@@ -1188,4 +1218,45 @@ function BotInstall_cuda {
     if [[ ! $cuda ]]; then cuda=$CUDA_TOOLKIT_ROOT_DIR/lib; fi
     BotRsyncToDir "$BOT_ROOT/lib/" $cuda/libcuda*
   fi
+}
+
+
+function BotPlatformCleanup {
+    BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/"*
+    if [ $BOT_OS_NAME == 'linux' ]; then
+      BotInstallPatchElf
+      export PATH="$PATH:$BOT_ROOT/bin"
+      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/bin"
+      BotRPathEdit '$ORIGIN/../lib' "$BOT_ROOT/lib"
+
+      # Python libs
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../' $BOT_ROOT/lib/python2.7/site-packages/
+
+      # Qt
+      BotRPathEdit '$ORIGIN/../../lib' "$BOT_ROOT/plugins/"*
+
+      # PySide -- remove
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
+      BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/PySide2
+
+      # SeExpr
+      BotRPathEdit '$ORIGIN:$ORIGIN/../../../' $BOT_ROOT/lib/python2.7/site-packages/SeExprPy
+
+    elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/bin"
+      BotInstallNameChange "@loader_path/../lib/" "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/bin"
+      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/lib"
+      BotInstallRemoveRPath '/Users/travis/VFX/lib' "$BOT_ROOT/bin"
+
+      BotInstallRemoveRPath '$ORIGIN/..' "$BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so"
+      for lib in PyOpenColorIO imathmodule iexmodule; do
+        BotInstallRemoveRPath '$ORIGIN/../lib' "$BOT_ROOT/lib/python2.7/site-packages/$lib.so"
+      done
+
+      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/lib"
+      # BotInstallAddRPath '@loader_path/../lib/' "$BOT_ROOT/bin"
+    fi
 }
