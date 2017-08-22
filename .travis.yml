@@ -130,12 +130,13 @@ before_install:
     export BOT_SWIG_BIN=/usr/local/opt/swig/bin
   fi
 
-  echo "DUMPEY DUMP"
-  ls -l /usr/local/opt/llvm
-  ls -l /usr/local/opt/llvm/lib
-  ls -l "$LLVM_DIRECTORY"
-  ls -l "$LLVM_DIRECTORY/lib"
-  ls -l "$LLVM_DIRECTORY/lib/cmake"
+  function TravisDisableCCache {
+    export CXX="$COMPILER"
+    export CC="$CCOMPILER"
+    $@
+    export CXX="ccache $COMPILER"
+    export CC="ccache $CCOMPILER"
+  }
 
 script:
 - |
@@ -239,11 +240,15 @@ script:
   export CXX="$COMPILER"
   export CC="$CCOMPILER"
 
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    install_name_tool -id '@loader_path/../lib/libglfw.3.2.dylib' $BOT_ROOT/lib/libglfw.3.2.dylib
+  fi
+
   # OpenSubdiv
-  BotInstall_osd --force
+  TravisDisableCCache BotInstall_osd --force
 
   # OpenImageIO
-  BotInstall_oiio --force -DUSE_CCACHE=ON
+  TravisDisableCCache BotInstall_oiio --force -DUSE_CCACHE=ON
 
   export CXX="ccache $COMPILER"
   export CC="ccache $CCOMPILER"
@@ -258,10 +263,9 @@ script:
 
   # OSL
   sudo easy_install pip
-  sudo pip install SIP
   BotInstall_seexpr -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm"
   BotInstall_partio
-  BotInstall_osl -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm"
+  TravisDisableCCache BotInstall_osl -DLLVM_DIRECTORY="$LLVM_DIRECTORY" -DUSE_CCACHE=ON
 
   # LibGit2
   BotInstall_libgit

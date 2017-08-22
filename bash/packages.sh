@@ -607,6 +607,9 @@ function BotInstall_glfw {
   esac
 
   BotCmakeInstallArk glfw https://github.com/glfw/glfw/archive/3.2.1.tar.gz "$BOT_ROOT" $@
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    install_name_tool -id '@loader_path/../lib/' $BOT_ROOT/lib/libglfw.3.dylib
+  fi
 }
 
 function BotInstall_ptex {
@@ -635,15 +638,29 @@ function BotInstall_osd {
 
   # https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_1_1.tar.gz
   BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
-    -DNO_REGRESSION=1 -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
+    -DNO_REGRESSION=1 \ -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
-    -DNO_DOC=1 \
+    -DNO_DOC=1 -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF \
     -DCUDA_TOOLKIT_ROOT_DIR="$CUDA_TOOLKIT_ROOT_DIR" $platformFlags $@
   #  -DNO_EXAMPLES=1 -DNO_TUTORIALS=1 -DNO_DOC=1 $@
 
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    pushd $TMPDIR/osd/tmpbuild
+    pushd opensubdiv
+    $CXX -I$BOT_ROOT/include -dynamiclib -Wl,-headerpad_max_install_names  -o ../lib/OpenSubdiv.framework/Versions/A/OpenSubdiv \
+      -install_name $BOT_ROOT/lib/OpenSubdiv.framework/Versions/A/OpenSubdiv \
+      CMakeFiles/osd_dynamic_framework.dir/version.cpp.o sdc/CMakeFiles/sdc_obj.dir/crease.cpp.o sdc/CMakeFiles/sdc_obj.dir/typeTraits.cpp.o vtr/CMakeFiles/vtr_obj.dir/fvarLevel.cpp.o vtr/CMakeFiles/vtr_obj.dir/fvarRefinement.cpp.o vtr/CMakeFiles/vtr_obj.dir/level.cpp.o vtr/CMakeFiles/vtr_obj.dir/quadRefinement.cpp.o vtr/CMakeFiles/vtr_obj.dir/refinement.cpp.o vtr/CMakeFiles/vtr_obj.dir/sparseSelector.cpp.o vtr/CMakeFiles/vtr_obj.dir/triRefinement.cpp.o far/CMakeFiles/far_obj.dir/error.cpp.o far/CMakeFiles/far_obj.dir/endCapBSplineBasisPatchFactory.cpp.o far/CMakeFiles/far_obj.dir/endCapGregoryBasisPatchFactory.cpp.o far/CMakeFiles/far_obj.dir/endCapLegacyGregoryPatchFactory.cpp.o far/CMakeFiles/far_obj.dir/gregoryBasis.cpp.o far/CMakeFiles/far_obj.dir/patchBasis.cpp.o far/CMakeFiles/far_obj.dir/patchDescriptor.cpp.o far/CMakeFiles/far_obj.dir/patchMap.cpp.o far/CMakeFiles/far_obj.dir/patchTable.cpp.o far/CMakeFiles/far_obj.dir/patchTableFactory.cpp.o far/CMakeFiles/far_obj.dir/ptexIndices.cpp.o far/CMakeFiles/far_obj.dir/stencilTable.cpp.o far/CMakeFiles/far_obj.dir/stencilTableFactory.cpp.o far/CMakeFiles/far_obj.dir/stencilBuilder.cpp.o far/CMakeFiles/far_obj.dir/topologyDescriptor.cpp.o far/CMakeFiles/far_obj.dir/topologyRefiner.cpp.o far/CMakeFiles/far_obj.dir/topologyRefinerFactory.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/cpuEvaluator.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/cpuKernel.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/cpuPatchTable.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/cpuVertexBuffer.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/tbbEvaluator.cpp.o osd/CMakeFiles/osd_cpu_obj.dir/tbbKernel.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/cpuGLVertexBuffer.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glLegacyGregoryPatchTable.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glPatchTable.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glVertexBuffer.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glslPatchShaderSource.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glXFBEvaluator.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/glComputeEvaluator.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/clEvaluator.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/clPatchTable.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/clVertexBuffer.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/clGLVertexBuffer.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/cudaEvaluator.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/cudaPatchTable.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/cudaVertexBuffer.cpp.o osd/CMakeFiles/osd_gpu_obj.dir/cudaGLVertexBuffer.cpp.o \
+      -framework OpenGL $BOT_ROOT/lib/libGLEW.dylib -framework OpenCL $BOT_ROOT/lib/libPtex.dylib \
+      $BOT_ROOT/lib/libtbb.dylib $BOT_ROOT/lib/libtbbmalloc.dylib $BOT_ROOT/lib/libtbbmalloc.dylib \
+      -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk \
+      CMakeFiles/osd_dynamic_gpu.dir/osd/osd_dynamic_gpu_generated_cudaKernel.cu.o -lcudart -L$BOT_ROOT/lib
+      # $BOT_ROOT/lib/libtbb_debug.dylib $BOT_ROOT/lib/libtbbmalloc.dylib $BOT_ROOT/lib/libtbbmalloc_debug.dylib $BOT_ROOT/lib/libtbbmalloc_proxy.dylib $BOT_ROOT/lib/libtbbmalloc_proxy_debug.dylib $BOT_ROOT/lib/libtbb_preview.dylib $BOT_ROOT/lib/libtbb_preview_debug.dylib
+    popd
+    BotRunCommand make -j $BOT_JOBS install
+    popd
+  fi
+
   #-DOPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK
-  mv $BOT_ROOT/lib/python2.7/pyopenvdb.${BOT_SHLIB} $BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so
-  # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so"
 }
 
 function BotInstall_numpy {
@@ -839,6 +856,9 @@ function BotInstall_openvdb {
     -DOPENEXR_LOCATION="$BOT_ROOT" -DILMBASE_LOCATION="$BOT_ROOT" \
     -DTBB_LIBRARYDIR="$TBB_ROOT/lib" -DUSE_GLFW3=ON -DGLFW3_USE_STATIC_LIBS=OFF \
     -DOPENVDB_BUILD_UNITTESTS=OFF -DCMAKE_CXX_FLAGS=-std=c++11 $@
+
+  mv $BOT_ROOT/lib/python2.7/pyopenvdb.${BOT_SHLIB} $BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so
+  # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/pyopenvdb.so"
 
   unset GLFW3_ROOT
   unset CPPUNIT_ROOT
@@ -1101,7 +1121,7 @@ function BotInstall_ocio {
 
 
 function BotInstall_seexpr {
-  case `BotInstallCheckFlags "$1" seexpr` in
+  case `BotInstallCheckFlags "$1" SeExpr2` in
     0) return 0 ;;
     1) shift ;;
     2) ;;
@@ -1112,7 +1132,7 @@ function BotInstall_seexpr {
 }
 
 function BotInstall_partio {
-  case `BotInstallCheckFlags "$1" partio` in
+  case `BotInstallCheckFlags "$1" Partio.h` in
     0) return 0 ;;
     1) shift ;;
     2) ;;
@@ -1132,7 +1152,7 @@ function BotInstall_osl {
   #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.8.10.tar.gz "$BOT_ROOT" $@
   #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DUSE_CPP=11 $@
   BotCmakeInstallGit osl https://github.com/marsupial/OpenShadingLanguage.git \
-    "$BOT_ROOT" -DUSE_CPP=11 -DLLVM_DIRECTORY="$LLVM_DIRECTORY" $@
+    "$BOT_ROOT" -DUSE_CPP=11 $@
 }
 
 function BotInstall_libgit {
@@ -1202,20 +1222,21 @@ function BotInstall_cuda {
     cuda=$(BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg)
     sudo $cuda/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     sudo ln -s lib /usr/local/cuda/lib64
+    cuda="/Developer/NVIDIA/CUDA-7.5/lib"
   else
     cuda=$(BotGetURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run)
     ls -l /tmp
     chmod 755 $cuda
     sudo $cuda --silent --toolkit # --toolkitpath=
     sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
+    cuda="/usr/local/cuda-7.5/lib64"
   fi
 
   if [[ $cuda ]]; then
     mkdir -p "$BOT_ROOT/include/cuda"
     export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda"
     BotRsyncToDir "$BOT_ROOT/include/cuda" $CUDA_TOOLKIT_ROOT_DIR/include/
-    if [[ ! $cuda ]]; then cuda=$CUDA_TOOLKIT_ROOT_DIR/lib; fi
-    BotRsyncToDir "$BOT_ROOT/lib/" $CUDA_TOOLKIT_ROOT_DIR/lib64/libcuda*
+    BotRsyncToDir "$BOT_ROOT/lib/" $cuda/libcuda*
   fi
 }
 
