@@ -1199,7 +1199,7 @@ function BotInstall_cuda {
 
   local cuda=""
   if [[ $BOT_OS_NAME == 'osx' ]]; then
-    local cuda=$(BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg)
+    cuda=$(BotMountURL http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.27_mac.dmg)
     sudo $cuda/CUDAMacOSXInstaller.app/Contents/MacOS/CUDAMacOSXInstaller --accept-eula --silent --no-window --install-package=cuda-toolkit
     sudo ln -s lib /usr/local/cuda/lib64
   else
@@ -1208,15 +1208,14 @@ function BotInstall_cuda {
     chmod 755 $cuda
     sudo $cuda --silent --toolkit # --toolkitpath=
     sudo ln -s /usr/local/cuda-7.5 /usr/local/cuda
-    cuda=/usr/local/cuda/lib64
   fi
 
   if [[ $cuda ]]; then
     mkdir -p "$BOT_ROOT/include/cuda"
     export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda"
-    BotRsyncToDir "$BOT_ROOT/include/cuda" "$CUDA_TOOLKIT_ROOT_DIR/include/"
+    BotRsyncToDir "$BOT_ROOT/include/cuda" $CUDA_TOOLKIT_ROOT_DIR/include/
     if [[ ! $cuda ]]; then cuda=$CUDA_TOOLKIT_ROOT_DIR/lib; fi
-    BotRsyncToDir "$BOT_ROOT/lib/" $cuda/libcuda*
+    BotRsyncToDir "$BOT_ROOT/lib/" $CUDA_TOOLKIT_ROOT_DIR/lib64/libcuda*
   fi
 }
 
