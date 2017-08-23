@@ -1148,6 +1148,18 @@ function BotInstall_osl {
     -DUSE_CPP=11 $@
 }
 
+function BotInstall_usd {
+  case `BotInstallCheckFlags "$1" usd` in
+    0) return 0 ;;
+    1) shift ;;
+    2) ;;
+  esac
+
+  BotCmakeInstallArk usd https://github.com/PixarAnimationStudios/USD/archive/v0.8.0.tar.gz \
+    -DPXR_BUILD_ALEMBIC_PLUGIN=ON -DALEMBIC_LOCATION="$BOT_ROOT" -DOPENEXR_LOCATION="$BOT_ROOT" -DHDF5_LOCATION="$BOT_ROOT" \
+    $@
+}
+
 function BotInstall_libgit {
   case `BotInstallCheckFlags "$1" git2.h` in
     0) return 0 ;;

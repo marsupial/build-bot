@@ -267,6 +267,9 @@ script:
   # LibGit2
   BotInstall_libgit
 
+  pip install jinja2 PyOpenGL
+  BotInstall_usd
+
   # Debug
   ls -l $BOT_ROOT/include
 
