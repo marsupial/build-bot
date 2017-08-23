@@ -59,7 +59,7 @@ before_install:
   export SECONDS=0
 
   mkdir -p $BOT_ROOT
-  BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-5de73bcfa2525847207e/buildbot-$BOT_OS_NAME.txz"
+  BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-78cf844ad945e7b57aa5/buildbot-$BOT_OS_NAME.txz"
   ls -la $BOT_ROOT
 
   if [ $TRAVIS_OS_NAME == 'linux' ]; then
@@ -245,13 +245,10 @@ script:
   fi
 
   # OpenSubdiv
-  TravisDisableCCache BotInstall_osd --force
+  TravisDisableCCache BotInstall_osd
 
   # OpenImageIO
-  TravisDisableCCache BotInstall_oiio --force -DUSE_CCACHE=ON
-
-  export CXX="ccache $COMPILER"
-  export CC="ccache $CCOMPILER"
+  TravisDisableCCache BotInstall_oiio -DUSE_CCACHE=ON
 
   # OpenColorIO with OpenImageIO support
   if [[ ! $ociobuilt ]]; then

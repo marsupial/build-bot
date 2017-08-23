@@ -41,6 +41,14 @@ function BotTestBin {
   echo "1"
 }
 
+function BotRunCommand {
+  if [[ ! -z $(BotTestBin timeout) ]]; then
+    timeout $(BotTimeRemaining)m $@
+  else
+    $@
+  fi
+}
+
 function BotURLCommand {
   local url=$1; shift;
   if [[ ! -z $(BotTestBin wget) ]]; then
@@ -59,7 +67,7 @@ function BotGetURL {
 }
 
 function BotExtractArchive {
-  local output="$1"; shift;
+  local dstdir="$1"; shift;
   local url="$1"; shift;
   local name=`basename $url`
   local ext=${name##*.}
@@ -75,57 +83,13 @@ function BotExtractArchive {
   esac
 
   local getURL=$(BotURLCommand $url)
-  eval $getURL $@ | tar -x${fmt} --strip-components=1 -C "$output"
+  eval $getURL $@ | tar -x${fmt} --strip-components=1 -C "$dstdir"
 }
 
 function BotExtractUrl {
-  local output=`BotTmpDir $1`; shift;
-  BotExtractArchive "$output" $@
-  echo "$output"
-}
-
-function BotRunCommand {
-  if [[ ! -z $(BotTestBin timeout) ]]; then
-    timeout $(BotTimeRemaining)m $@
-  else
-    $@
-  fi
-}
-
-function BotBuildTarget {
-  BotRunCommand make -j $BOT_JOBS $@ # VERBOSE=1
-}
-
-function BotCmakeBuildDir {
-  local TARGET=$1; shift;
-  local PREFIX=$1; shift;
-  mkdir tmpbuild && pushd tmpbuild
-    BotLog "cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH=$PREFIX -DCMAKE_INSTALL_PREFIX=$PREFIX $@"
-    cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH=$PREFIX -DCMAKE_INSTALL_PREFIX=$PREFIX $@
-    BotBuildTarget $TARGET
-  popd
-}
-
-function BotCmakeBuild {
-  BotCmakeBuildDir $@ ..
-}
-
-function BotCmakeBuildArk {
-  local DSTDIR=$(BotExtractUrl $1 $2); shift; shift;
-  pushd "$DSTDIR";
-  BotCmakeBuild "$@"
-  popd
-  echo "$DSTDIR"
-}
-
-function BotCmakeInstall {
-  BotCmakeBuild install "$@"
-}
-
-function BotCmakeInstallArk {
-  pushd "$(BotExtractUrl $1 $2)"; shift; shift;
-  BotCmakeInstall "$@"
-  popd
+  local dstdir=`BotTmpDir $1`; shift;
+  BotExtractArchive "$dstdir" $@
+  echo "$dstdir"
 }
 
 function BotGitCloneRepo {
@@ -134,18 +98,48 @@ function BotGitCloneRepo {
   echo "$dstdir"
 }
 
+function BotBuildTarget {
+  BotRunCommand make -j $BOT_JOBS $@ # VERBOSE=1
+}
+
+function BotCmakeConfig {
+  BotLog "cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH=\"$BOT_ROOT\" -DCMAKE_INSTALL_PREFIX=\"$BOT_ROOT\" $@"
+  cmake $CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$BOT_ROOT" -DCMAKE_INSTALL_PREFIX="$BOT_ROOT" $@
+}
+
+function BotMakeConfig {
+  BotLog "./configure --prefix=\"$BOT_ROOT\" --enable-shared --disable-static $@"
+  ./configure --prefix="$BOT_ROOT" --enable-shared --disable-static $@
+}
+
+function BotCmakeBuild {
+  local target=$1; shift;
+  mkdir tmpbuild && pushd tmpbuild
+    BotCmakeConfig $@
+    BotBuildTarget $target
+  popd
+}
+
+function BotCmakeInstall {
+  BotCmakeBuild install $@ ..
+}
+
+function BotCmakeInstallArk {
+  pushd "$(BotExtractUrl $1 $2)"; shift; shift;
+    BotCmakeInstall $@
+  popd
+}
+
 function BotCmakeInstallGit {
   pushd "$(BotGitCloneRepo $1 $2)"; shift; shift;
-    BotCmakeInstall "$@"
+    BotCmakeInstall $@
   popd
 }
 
 function BotMakeBuildArk {
   pushd "$(BotExtractUrl $1 $2)"; shift; shift;
-  local PREFIX=$1; shift;
-    BotLog "./configure --prefix=$PREFIX --enable-shared --disable-static $@"
-    ./configure --prefix=$PREFIX --enable-shared --disable-static "$@"
-  BotBuildTarget install
+    BotMakeConfig $@
+    BotBuildTarget install
   popd
 }
 
@@ -177,13 +171,6 @@ function BotRestoreUsrLocal {
   sudo mv /usr/local.bak /usr/local
 }
 
-function BotRsyncToDir {
-  local dst="$1"; shift;
-  for f in $@; do
-    rsync -a "$f" "$dst"
-  done
-}
-
 function BotMountDMG {
   echo `hdiutil attach "$1" | grep /Volumes | awk '{print substr($0, index($0,$3))}'`
 }
@@ -203,6 +190,13 @@ function BotInstallPackages {
   rsync -a ./usr/* $BOT_ROOT
   popd
   # rm -rf "$LDIR"/*
+}
+
+function BotRsyncToDir {
+  local dst="$1"; shift;
+  for f in $@; do
+    rsync -a "$f" "$dst"
+  done
 }
 
 function BotHasInclude {
@@ -314,7 +308,7 @@ function BotInstallPatchElf {
     2) ;;
   esac
 
-  BotMakeBuildArk patchelf https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 "$BOT_ROOT" $@
+  BotMakeBuildArk patchelf https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 $@
   alias patchelf=$BOT_ROOT/bin/patchelf
 }
 
@@ -412,7 +406,7 @@ function BotInstall_pkgconfig {
     return 0;
   fi
 
-  BotMakeBuildArk pkgcfg https://pkg-config.freedesktop.org/releases/pkg-config-0.29.1.tar.gz "$BOT_ROOT" $@
+  BotMakeBuildArk pkgcfg https://pkg-config.freedesktop.org/releases/pkg-config-0.29.1.tar.gz $@
 }
 
 function BotInstall_boost {
@@ -454,12 +448,12 @@ function BotInstall_freetype {
     2) ;;
   esac
 
-  BotMakeBuildArk bsftype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz "$BOT_ROOT" --with-harfbuzz=no $@
-  BotMakeBuildArk harfbuzz https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.1.tar.bz2 "$BOT_ROOT" $@
+  BotMakeBuildArk bsftype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz --with-harfbuzz=no $@
+  BotMakeBuildArk harfbuzz https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.1.tar.bz2 $@
 
   rm -rf "$BOT_ROOT/include/freetype2"
   rm -rf "$BOT_ROOT/lib/"libfreetype*
-  BotMakeBuildArk freetype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz "$BOT_ROOT" $@
+  BotMakeBuildArk freetype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz $@
 }
 
 function BotInstall_pyside {
@@ -596,7 +590,7 @@ function BotInstall_clew {
     2) ;;
   esac
 
-  BotCmakeInstallGit clew https://github.com/martijnberger/clew.git "$BOT_ROOT" $@
+  BotCmakeInstallGit clew https://github.com/martijnberger/clew.git $@
 }
   
 function BotInstall_glfw {
@@ -606,7 +600,7 @@ function BotInstall_glfw {
     2) ;;
   esac
 
-  BotCmakeInstallArk glfw https://github.com/glfw/glfw/archive/3.2.1.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk glfw https://github.com/glfw/glfw/archive/3.2.1.tar.gz $@
   if [[ $BOT_OS_NAME == 'osx' ]] ; then
     install_name_tool -id '@loader_path/../lib/' $BOT_ROOT/lib/libglfw.3.dylib
   fi
@@ -619,7 +613,7 @@ function BotInstall_ptex {
     2) ;;
   esac
 
-  BotCmakeInstallArk ptex https://github.com/wdas/ptex/archive/v2.1.28.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk ptex https://github.com/wdas/ptex/archive/v2.1.28.tar.gz $@
 }
 
 function BotInstall_osd {
@@ -637,7 +631,7 @@ function BotInstall_osd {
   fi
 
   # https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_1_1.tar.gz
-  BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz \
     -DNO_REGRESSION=1 \ -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DNO_DOC=1 -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF \
@@ -713,8 +707,8 @@ function BotInstall_openexr {
     2) ;;
   esac
 
-  #BotMakeBuildArk ilmbase http://download.savannah.nongnu.org/releases/openexr/ilmbase-2.2.0.tar.gz "$BOT_ROOT"
-  #BotMakeBuildArk openexr http://download.savannah.nongnu.org/releases/openexr/openexr-2.2.0.tar.gz "$BOT_ROOT" --with-pkg-config=no LDFLAGS="-Wl,-rpath -Wl,$USD_DEPS/lib"
+  #BotMakeBuildArk ilmbase http://download.savannah.nongnu.org/releases/openexr/ilmbase-2.2.0.tar.gz
+  #BotMakeBuildArk openexr http://download.savannah.nongnu.org/releases/openexr/openexr-2.2.0.tar.gz --with-pkg-config=no LDFLAGS="-Wl,-rpath -Wl,$USD_DEPS/lib"
 
   pushd `BotExtractUrl openexr https://github.com/openexr/openexr/archive/v2.2.0.tar.gz`
     ls -l
@@ -744,14 +738,13 @@ function BotInstall_hdf5 {
     2) ;;
   esac
 
-  BotMakeBuildArk szip https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz "$BOT_ROOT" $@
+  BotMakeBuildArk szip https://support.hdfgroup.org/ftp/lib-external/szip/2.1.1/src/szip-2.1.1.tar.gz $@
   if [[ $BOT_OS_NAME == 'osx' ]] ; then
     BotInstallPathID libsz.2.dylib
   fi
 
   # -Wno-strict-overflow -Wno-double-promotion -Wno-sign-conversion -Wno-c++-compat -Wno-cast-qual -Wno-format-nonliteral -Wno-unused-result -Wno-conversion -Wno-suggest-attribute=pure -Wno-suggest-attribute=const -Wno-frame-larger-than= -Wno-larger-than=
-  BotMakeBuildArk hdf5 https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.19.tar.gz \
-    "$BOT_ROOT" --with-szip="$BOT_ROOT" $@
+  BotMakeBuildArk hdf5 https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.19.tar.gz --with-szip="$BOT_ROOT" $@
 }
 
 function BotInstall_alembic {
@@ -761,7 +754,7 @@ function BotInstall_alembic {
     2) ;;
   esac
 
-  BotCmakeInstallArk alembic https://github.com/alembic/alembic/archive/1.7.3.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk alembic https://github.com/alembic/alembic/archive/1.7.3.tar.gz \
     -DUSE_HDF5=ON -DUSE_PYALEMBIC=ON \
     -DALEMBIC_PYIMATH_MODULE_DIRECTORY="$BOT_ROOT/lib/python2.7/site-packages" \
     -DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY="$BOT_ROOT/include/PyImath" \
@@ -776,7 +769,7 @@ function BotInstall_field3D {
     2) ;;
   esac
 
-  BotCmakeInstallArk field3d https://github.com/imageworks/Field3D/archive/v1.7.2.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk field3d https://github.com/imageworks/Field3D/archive/v1.7.2.tar.gz \
   -DHDF5_INCLUDE_DIRS=$BOT_ROOT/include -DHDF5_LIBRARIES=$BOT_ROOT/lib $@
 }
 
@@ -788,7 +781,7 @@ function BotInstall_lz4 {
   esac
 
   pushd "$(BotExtractUrl lz4 https://github.com/lz4/lz4/archive/v1.7.5.tar.gz)";
-    BotCmakeBuildDir install "$BOT_ROOT" ../contrib/cmake_unofficial
+    BotCmakeBuild install ../contrib/cmake_unofficial
   popd
 }
 
@@ -798,7 +791,7 @@ function BotInstall_snappy {
     1) shift ;;
     2) ;;
   esac
-  BotCmakeInstallArk snappy https://github.com/google/snappy/archive/1.1.6.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk snappy https://github.com/google/snappy/archive/1.1.6.tar.gz $@
 }
 
 function BotInstall_zstd {
@@ -809,7 +802,7 @@ function BotInstall_zstd {
   esac
 
   pushd "$(BotExtractUrl zstd https://github.com/facebook/zstd/archive/v1.3.0.tar.gz)";
-    BotCmakeBuildDir install "$BOT_ROOT" ../build/cmake
+    BotCmakeBuild install ../build/cmake
   popd
 }
 
@@ -827,7 +820,7 @@ function BotInstall_blosc {
   esac
 
   BotInstall_compressors
-  BotCmakeInstallArk blosc https://github.com/Blosc/c-blosc/archive/v1.12.1.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk blosc https://github.com/Blosc/c-blosc/archive/v1.12.1.tar.gz \
     -DPREFER_EXTERNAL_LZ4=ON -DPREFER_EXTERNAL_SNAPPY=ON -DPREFER_EXTERNAL_ZSTD=ON \
     -DPREFER_EXTERNAL_ZLIB=ON $@
 }
@@ -850,7 +843,7 @@ function BotInstall_openvdb {
     CXXFLAGS="$CXXFLAGS -stlib=libc++"
   fi
 
-  BotCmakeInstallArk openvdb https://github.com/dreamworksanimation/openvdb/archive/v4.0.2.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk openvdb https://github.com/dreamworksanimation/openvdb/archive/v4.0.2.tar.gz \
     -DHDF5_INCLUDE_DIRS="$BOT_ROOT/include" -DHDF5_LIBRARIES="$BOT_ROOT/lib" \
     -DBLOSC_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DOPENEXR_LOCATION="$BOT_ROOT" -DILMBASE_LOCATION="$BOT_ROOT" \
@@ -873,7 +866,7 @@ function BotInstall_png {
     2) ;;
   esac
 
-  BotMakeBuildArk png https://download.sourceforge.net/libpng/libpng-1.6.30.tar.gz "$BOT_ROOT" $@
+  BotMakeBuildArk png https://download.sourceforge.net/libpng/libpng-1.6.30.tar.gz $@
 }
 
 function BotInstallStaticToDynlib {
@@ -891,7 +884,7 @@ function BotInstall_yasm {
     2) ;;
   esac
 
-  BotMakeBuildArk yasm http://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz "$BOT_ROOT"
+  BotMakeBuildArk yasm http://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz $@
   BotInstallStaticToDynlib yasm
 }
 
@@ -903,9 +896,9 @@ function BotInstall_jpeg {
   esac
 
   BotInstall_yasm
-  BotCmakeInstallGit jpeg https://github.com/marsupial/libjpeg-turbo.git "$BOT_ROOT" \
+  BotCmakeInstallGit jpeg https://github.com/marsupial/libjpeg-turbo.git \
     -DNASM="$BOT_ROOT/bin/yasm" -DENABLE_SHARED=ON -DENABLE_STATIC=OFF $@
-  #BotCmakeInstallArk jpeg https://github.com/libjpeg-turbo/libjpeg-turbo/archive/1.5.2.tar.gz "$BOT_ROOT" $@
+  #BotCmakeInstallArk jpeg https://github.com/libjpeg-turbo/libjpeg-turbo/archive/1.5.2.tar.gz $@
 }
 
 function BotInstall_gif {
@@ -915,7 +908,7 @@ function BotInstall_gif {
     2) ;;
   esac
 
-  BotMakeBuildArk gif "https://iweb.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.bz2" "$BOT_ROOT" $@
+  BotMakeBuildArk gif "https://iweb.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.bz2" $@
 }
 
 function BotInstall_tiff {
@@ -925,7 +918,7 @@ function BotInstall_tiff {
     2) ;;
   esac
 
-  BotMakeBuildArk tiff http://dl.maptools.org/dl/libtiff/tiff-3.8.2.tar.gz "$BOT_ROOT" $@
+  BotMakeBuildArk tiff http://dl.maptools.org/dl/libtiff/tiff-3.8.2.tar.gz $@
 }
 
 function BotInstall_jpeg2000 {
@@ -937,8 +930,8 @@ function BotInstall_jpeg2000 {
 
   BotInstall_yasm;
   BotInstall_lcms2;
-  BotCmakeInstallArk jasper https://github.com/mdadams/jasper/archive/version-2.0.10.tar.gz "$BOT_ROOT" $@
-  BotCmakeInstallArk openjpeg https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk jasper https://github.com/mdadams/jasper/archive/version-2.0.10.tar.gz $@
+  BotCmakeInstallArk openjpeg https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz $@
   mv "$BOT_ROOT/lib/openjpeg-2.1" "$BOT_ROOT/lib/cmake"
 }
 
@@ -950,7 +943,7 @@ function BotInstall_webp {
   esac
 
   pushd $(BotExtractUrl webp "https://github.com/webmproject/libwebp/archive/v0.6.0.tar.gz")
-    BotCmakeBuild "" "$BOT_ROOT" $@
+    BotCmakeBuild "" $@ ..
     mv src/webp "$BOT_ROOT/include"
     rsync -a "tmpbuild/include" "$BOT_ROOT"
     mv tmpbuild/libwebp.${BOT_SHLIB} "$BOT_ROOT/lib/"
@@ -974,7 +967,7 @@ function BotInstall_libraw {
     2) ;;
   esac
 
-  BotMakeBuildArk libraw http://www.libraw.org/data/LibRaw-0.18.0.tar.gz "$BOT_ROOT" \
+  BotMakeBuildArk libraw http://www.libraw.org/data/LibRaw-0.18.0.tar.gz \
     --enable-demosaic-pack-gpl2=$(BotExtractUrl librawdm2 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL2-0.18.0.tar.gz) \
     --enable-demosaic-pack-gpl3=$(BotExtractUrl librawdm3 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL3-0.18.0.tar.gz) \
     $@
@@ -988,7 +981,7 @@ function BotInstall_ffmpeg {
   esac
 
   BotInstall_yasm
-  BotMakeBuildArk ffmpeg https://github.com/FFmpeg/FFmpeg/archive/n2.8.10.tar.gz "$BOT_ROOT" \
+  BotMakeBuildArk ffmpeg https://github.com/FFmpeg/FFmpeg/archive/n2.8.10.tar.gz \
     --yasmexe="$BOT_ROOT/bin/yasm" $@
 }
 
@@ -999,7 +992,7 @@ function BotInstall_dcmtk {
     2) ;;
   esac
 
-  BotCmakeInstallArk dcmtk http://dicom.offis.de/download/dcmtk/dcmtk362/dcmtk-3.6.2.tar.gz "$BOT_ROOT" \
+  BotCmakeInstallArk dcmtk http://dicom.offis.de/download/dcmtk/dcmtk362/dcmtk-3.6.2.tar.gz \
     -DCMTK_USE_CXX11_STL=ON -DJPEG_INCLUDE_DIR="$BOT_ROOT/include" $@
 }
 
@@ -1048,7 +1041,7 @@ function BotInstall_oiio {
   BotInstall_freetype
   #BotInstall_openssl
 
-  BotCmakeInstallGit oiio https://github.com/marsupial/oiio.git "$BOT_ROOT" -DBOOST_ROOT="$BOT_ROOT" \
+  BotCmakeInstallGit oiio https://github.com/marsupial/oiio.git -DBOOST_ROOT="$BOT_ROOT" \
     -DEMBEDPLUGINS=OFF -DSTOP_ON_WARNING=OFF \
     -DWEBP_INCLUDE_DIR="$BOT_ROOT/include" -DWEBP_LIBRARY="$BOT_ROOT/lib/libwebp.$BOT_SHLIB" \
     -DUSE_OPENJPEG=ON -DOPENJPEG_HOME="$BOT_ROOT" \
@@ -1068,7 +1061,7 @@ function BotInstall_lcms2 {
     2) ;;
   esac
 
- BotMakeBuildArk lcms2 https://cytranet.dl.sourceforge.net/project/lcms/lcms/2.8/lcms2-2.8.tar.gz "$BOT_ROOT" $@
+ BotMakeBuildArk lcms2 https://cytranet.dl.sourceforge.net/project/lcms/lcms/2.8/lcms2-2.8.tar.gz $@
 }
 
 function BotInstall_tinyxml {
@@ -1078,7 +1071,7 @@ function BotInstall_tinyxml {
     2) ;;
   esac
 
-  BotCmakeInstallArk tinyxml https://github.com/leethomason/tinyxml2/archive/5.0.1.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk tinyxml https://github.com/leethomason/tinyxml2/archive/5.0.1.tar.gz $@
 }
 
 function BotInstall_yamlxx {
@@ -1088,7 +1081,7 @@ function BotInstall_yamlxx {
     2) ;;
   esac
 
-  BotCmakeInstallArk yamlxx https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.5.3.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk yamlxx https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.5.3.tar.gz $@
 }
 
 function BotInstall_jsoncpp {
@@ -1098,7 +1091,7 @@ function BotInstall_jsoncpp {
     2) ;;
   esac
 
-  BotCmakeInstallArk jsoncpp https://github.com/open-source-parsers/jsoncpp/archive/1.8.1.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk jsoncpp https://github.com/open-source-parsers/jsoncpp/archive/1.8.1.tar.gz $@
   BotInstallStaticToDynlib jsoncpp
 }
 
@@ -1112,10 +1105,10 @@ function BotInstall_ocio {
   BotInstall_lcms2
   BotInstall_tinyxml
   BotInstall_yamlxx
-  BotCmakeInstallGit ocio https://github.com/marsupial/OpenColorIO.git "$BOT_ROOT" \
+  BotCmakeInstallGit ocio https://github.com/marsupial/OpenColorIO.git \
     -DUSE_EXTERNAL_YAML=ON -DUSE_EXTERNAL_TINYXML=ON -DOCIO_BUILD_SHARED=ON -DOCIO_BUILD_STATIC=OFF \
     -DTinyXML2_DIR="$BOT_ROOT/lib/cmake/tinyxml2" -DCMAKE_CXX_FLAGS=-std=c++11 $@
-  # BotCmakeInstallArk ocio https://github.com/imageworks/OpenColorIO/archive/v1.0.9.tar.gz "$BOT_ROOT" -DBUILD_STATIC_LIBS=OFF -DUSE_EXTERNAL_LCMS=ON
+  # BotCmakeInstallArk ocio https://github.com/imageworks/OpenColorIO/archive/v1.0.9.tar.gz -DBUILD_STATIC_LIBS=OFF -DUSE_EXTERNAL_LCMS=ON
   # -DUSE_EXTERNAL_YAML=ON -DUSE_EXTERNAL_TINYXML=ON
 }
 
@@ -1127,7 +1120,7 @@ function BotInstall_seexpr {
     2) ;;
   esac
 
-  BotCmakeInstallGit seexpr https://github.com/marsupial/SeExpr.git "$BOT_ROOT" \
+  BotCmakeInstallGit seexpr https://github.com/marsupial/SeExpr.git \
     -DSEEXPR_ENABLE_LLVM_BACKEND=0 -DENABLE_LLVM_BACKEND=OFF -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm" $@
 }
 
@@ -1138,7 +1131,7 @@ function BotInstall_partio {
     2) ;;
   esac
 
-  BotCmakeInstallGit partio https://github.com/marsupial/partio.git "$BOT_ROOT" \
+  BotCmakeInstallGit partio https://github.com/marsupial/partio.git \
     -DSEEXPR_BASE="$BOT_ROOT" $@
 }
 
@@ -1149,10 +1142,10 @@ function BotInstall_osl {
     2) ;;
   esac
 
-  #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.8.10.tar.gz "$BOT_ROOT" $@
-  #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz "$BOT_ROOT" -DUSE_CPP=11 $@
+  #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.8.10.tar.gz $@
+  #BotCmakeInstallArk osl https://github.com/imageworks/OpenShadingLanguage/archive/Release-1.9.0dev.tar.gz -DUSE_CPP=11 $@
   BotCmakeInstallGit osl https://github.com/marsupial/OpenShadingLanguage.git \
-    "$BOT_ROOT" -DUSE_CPP=11 $@
+    -DUSE_CPP=11 $@
 }
 
 function BotInstall_libgit {
@@ -1162,7 +1155,7 @@ function BotInstall_libgit {
     2) ;;
   esac
 
-  BotCmakeInstallArk libgit https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz "$BOT_ROOT" $@
+  BotCmakeInstallArk libgit https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz $@
 }
 
 function BotInstall_tbb {
