@@ -267,6 +267,7 @@ script:
 
   pip install setuptools
   pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
+  export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
   BotInstall_usd
 
   # Debug
