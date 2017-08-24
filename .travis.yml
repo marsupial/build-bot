@@ -60,6 +60,7 @@ before_install:
   echo "python --version"
   echo $(python --version)
   python --version
+  python -c "import site; print site.getsitepackages()"
 
   ls -l $(dirname `which python`)
 
@@ -273,7 +274,11 @@ script:
     mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
   fi
 
-  sudo easy_install pip
+  if [ $TRAVIS_OS_NAME == 'osx' ]; then
+    sudo easy_install pip
+  else
+    sudo pip install --upgrade pip setuptools
+  fi
 
   # OSL
   BotInstall_seexpr -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm"
@@ -283,9 +288,6 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  if [ $TRAVIS_OS_NAME == 'osx' ]; then
-    sudo pip install -U setuptools
-  fi
   pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
   export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
   BotInstall_usd
