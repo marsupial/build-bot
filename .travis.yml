@@ -61,8 +61,11 @@ before_install:
   echo $(python --version)
   python --version
   python -c "import site; print site.getsitepackages()"
+  echo "PATH: $PATH"
 
   ls -l $(dirname `which python`)
+  ls -l /opt/python/2.7.13/lib/python2.7/site-packages
+  ls -l /opt/python/2.7.13/lib/site-python
 
   echo $(uname -a)
   export BOT_ROOT=$HOME/VFX
@@ -277,7 +280,7 @@ script:
   if [ $TRAVIS_OS_NAME == 'osx' ]; then
     sudo easy_install pip
   else
-    sudo pip install --upgrade pip setuptools
+    python -m pip install --upgrade pip setuptools
   fi
 
   # OSL
@@ -288,7 +291,7 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
+  python -m pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
   export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
   BotInstall_usd
 
