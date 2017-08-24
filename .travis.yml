@@ -227,7 +227,7 @@ script:
   fi
 
   # TBB
-  BotInstall_tbb --force
+  BotInstall_tbb
 
   ### Alembic
   BotInstall_alembic
