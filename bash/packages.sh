@@ -477,6 +477,12 @@ function BotRsyncToDir {
 }
 
 function BotInstall_pyside {
+  pushd "$(BotGitCloneRepo pyside --branch 5.6 https://code.qt.io/pyside/pyside-setup)"
+    for dir in Compiler port_v2 port_v3 widget-plugins pyside2uic; do
+      rsync -a "sources/pyside2-tools/pyside2uic/$f" "$BOT_ROOT/lib/python2.7/site-packages/pyside2uic/"
+    done
+  popd
+
   case `BotInstallCheckFlags "$1" "../lib/python2.7/PySide2"` in
     0) return 0 ;;
     1) shift ;;
