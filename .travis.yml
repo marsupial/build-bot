@@ -45,6 +45,24 @@ matrix:
 
 before_install:
 - |
+  echo "which easy_install"
+  which easy_install
+  echo $(which easy_install)
+
+  echo "which python"
+  which python
+  echo $(which python)
+
+  echo "which pip"
+  which pip
+  echo $(which pip)
+
+  echo "python --version"
+  echo $(python --version)
+  python --version
+
+  ls -l $(dirname `which python`)
+
   echo $(uname -a)
   export BOT_ROOT=$HOME/VFX
   export TMPDIR=/tmp
