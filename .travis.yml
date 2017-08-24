@@ -265,7 +265,9 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  sudo pip install -U setuptools
+  if [ $TRAVIS_OS_NAME == 'osx' ]; then
+    sudo pip install -U setuptools
+  fi
   pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
   export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
   BotInstall_usd
