@@ -131,7 +131,14 @@ function BotCmakeInstallArk {
 }
 
 function BotCmakeInstallGit {
-  pushd "$(BotGitCloneRepo $1 $2)"; shift; shift;
+  local bflag=""
+  local branch=""
+  if [[ "$3" == "-b" || "$3" == "--branch" ]]; then
+    bflag="$3"
+    branch="$4"
+  fi
+  pushd "$(BotGitCloneRepo $1 $2 $bflag $branch)"; shift; shift;
+    if [[ ! -z $bflag ]]; then shift; shift; fi
     BotCmakeInstall $@
   popd
 }
@@ -231,17 +238,23 @@ function BotELFFiles {
 }
 
 function BotInstallPathID {
-  local recurse="";
-  if [[ $1 == "recurse" ]]; then
-    recurse=1
-    shift;
-  fi
+  local recurse
+  local prefix=""
+  while [ $# ]; do
+    case $1 in
+      -r|--recurse) recurse=1; shift ;;
+      -p|--prefix) prefix="$2"; shift; shift ;;
+      --prefix=*) prefix=${1:9}; shift ;;
+      *) break ;;
+    esac
+  done
+
   for lib in $@; do
     if [ -f "$BOT_ROOT/lib/$lib" ]; then
       install_name_tool -id "@loader_path/../lib/$lib" "$BOT_ROOT/lib/$lib"
       if [[ ! -z $recurse ]]; then
         for libl in $@; do
-          install_name_tool -change "$libl" "@loader_path/../lib/$libl" "$BOT_ROOT/lib/$lib"
+          install_name_tool -change "${prefix}${libl}" "@loader_path/../lib/$libl" "$BOT_ROOT/lib/$lib"
         done
       fi
     fi
@@ -349,7 +362,7 @@ function BotFixupPythonPaths {
   for fpath in $@; do
     local cpath=$lpath
     if [[ -d $fpath ]]; then cpath="${cpath}../"; fi
-    $cmd $arg0 "$cpath" "$fpath"
+    echo $cmd $arg0 "$cpath" "$fpath"
   done
 }
 
@@ -427,7 +440,7 @@ function BotInstall_boost {
   popd
 
   if [[ $BOT_OS_NAME == 'osx' ]] ; then
-    BotInstallPathID recurse libboost_chrono.dylib libboost_container.dylib libboost_context.dylib \
+    BotInstallPathID -r libboost_chrono.dylib libboost_container.dylib libboost_context.dylib \
       libboost_coroutine.dylib libboost_date_time.dylib libboost_filesystem.dylib \
       libboost_graph.dylib libboost_iostreams.dylib libboost_locale.dylib \
       libboost_log_setup.dylib libboost_log.dylib libboost_math_c99.dylib \
@@ -456,6 +469,13 @@ function BotInstall_freetype {
   BotMakeBuildArk freetype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz $@
 }
 
+function BotRsyncToDir {
+  local dst="$1"; shift;
+  for f in $@; do
+    rsync -a "$f" "$dst"
+  done
+}
+
 function BotInstall_pyside {
   case `BotInstallCheckFlags "$1" "../lib/python2.7/PySide2"` in
     0) return 0 ;;
@@ -476,6 +496,9 @@ function BotInstall_pyside {
       BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libpyside*
       BotFixSymlinks $BOT_ROOT/lib/python2.7/site-packages/PySide2 $BOT_ROOT/lib/python2.7/site-packages/PySide2/libshiboken*
     fi
+    for dir in Compiler port_v2 port_v3 widget-plugins pyside2uic; do
+      rsync -a "sources/pyside2-tools/pyside2uic/$f" "$BOT_ROOT/lib/python2.7/site-packages/pyside2uic/"
+    done
   popd
   # BotFixupPythonPaths "$BOT_ROOT/lib/python2.7/site-packages/PySide2"
 }
@@ -658,6 +681,8 @@ function BotInstall_osd {
 }
 
 function BotInstall_numpy {
+  # pip install --install-option="--prefix=$BOT_ROOT" numpy
+
   # https://github.com/numpy/numpy/archive/v1.12.0.tar.gz
   case `BotInstallCheckFlags "$1" numpy` in
     0) return 0 ;;
@@ -1136,7 +1161,7 @@ function BotInstall_partio {
 }
 
 function BotInstall_osl {
-  case `BotInstallCheckFlags "$1" OpenShadingLanguage` in
+  case `BotInstallCheckFlags "$1" OSL` in
     0) return 0 ;;
     1) shift ;;
     2) ;;
@@ -1155,9 +1180,22 @@ function BotInstall_usd {
     2) ;;
   esac
 
-  BotCmakeInstallArk usd https://github.com/PixarAnimationStudios/USD/archive/v0.8.0.tar.gz \
+  BotCmakeInstallGit usd https://github.com/marsupial/USD.git \
+    --branch dev \
     -DPXR_BUILD_ALEMBIC_PLUGIN=ON -DALEMBIC_LOCATION="$BOT_ROOT" -DOPENEXR_LOCATION="$BOT_ROOT" -DHDF5_LOCATION="$BOT_ROOT" \
     $@
+
+  mv $BOT_ROOT/lib/python/pxr $BOT_ROOT/lib/python2.7/site-packages/
+  if [[ $BOT_OS_NAME == 'osx' ]]; then
+    BotInstallNameChangePrefix '@rpath/' '@loader_path/../../../../' $BOT_ROOT/lib/python2.7/site-packages/pxr/*/*.so
+    BotInstallNameChangePrefix '@loader_path/../lib/' '@loader_path/../../../../' $BOT_ROOT/lib/python2.7/site-packages/pxr/*/*.so
+    BotInstallNameChangePrefix "@rpath/" "@loader_path/../../lib/" $BOT_ROOT/plugin/usd/*.${BOT_SHLIB}
+    BotInstallNameChangePrefix '@loader_path/../lib/' "@loader_path/../../lib/" $BOT_ROOT/plugin/usd/*.${BOT_SHLIB}
+    install_name_tool -change '@loader_path/../../../../usdAbc.dylib' '@loader_path/../../../../../plugin/usd/usdAbc.dylib' $BOT_ROOT/lib/python2.7/site-packages/pxr/UsdAbc/_usdAbc.so
+  else
+    BotRPathEdit '$ORIGIN/../../lib' $BOT_ROOT/plugin/usd/*.${BOT_SHLIB}
+    BotRPathEdit '$ORIGIN/../../../../' $BOT_ROOT/lib/python2.7/site-packages/pxr/*/*.so
+  fi
 }
 
 function BotInstall_libgit {
@@ -1204,7 +1242,7 @@ function BotInstall_tbb {
   popd
 
   if [[ $BOT_OS_NAME == 'osx' ]]; then
-    BotInstallPathID recurse libtbb_debug.dylib libtbb_preview_debug.dylib \
+    BotInstallPathID -r -p @rpath/  libtbb_debug.dylib libtbb_preview_debug.dylib \
       libtbb_preview.dylib libtbb.dylib libtbbmalloc_debug.dylib \
       libtbbmalloc_proxy_debug.dylib libtbbmalloc_proxy.dylib libtbbmalloc.dylib
   fi

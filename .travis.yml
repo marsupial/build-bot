@@ -190,7 +190,6 @@ script:
   # boost
   BotInstall_boost
 
-  echo "NumPy"
   # NumPy
   BotInstall_numpy
 
@@ -222,8 +221,13 @@ script:
   # OpenEXR
   BotInstall_openexr
 
+  if [[ $BOT_OS_NAME == 'osx' ]] ; then
+    install_name_tool -id '@loader_path/../lib/libglfw.3.2.dylib' $BOT_ROOT/lib/libglfw.3.2.dylib
+    BotInstallPathID -r -p @rpath/  libtbb_debug.dylib libtbb_preview_debug.dylib libtbb_preview.dylib libtbb.dylib libtbbmalloc_debug.dylib libtbbmalloc_proxy_debug.dylib libtbbmalloc_proxy.dylib libtbbmalloc.dylib
+  fi
+
   # TBB
-  BotInstall_tbb
+  BotInstall_tbb --force
 
   ### Alembic
   BotInstall_alembic
@@ -236,13 +240,6 @@ script:
 
   ociobuilt=$(BotHasInclude OpenColorIO)
   BotInstall_ocio
-
-  export CXX="$COMPILER"
-  export CC="$CCOMPILER"
-
-  if [[ $BOT_OS_NAME == 'osx' ]] ; then
-    install_name_tool -id '@loader_path/../lib/libglfw.3.2.dylib' $BOT_ROOT/lib/libglfw.3.2.dylib
-  fi
 
   # OpenSubdiv
   TravisDisableCCache BotInstall_osd
@@ -258,8 +255,9 @@ script:
     mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
   fi
 
-  # OSL
   sudo easy_install pip
+
+  # OSL
   BotInstall_seexpr -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm"
   BotInstall_partio
   TravisDisableCCache BotInstall_osl -DLLVM_DIRECTORY="$LLVM_DIRECTORY" -DUSE_CCACHE=ON
@@ -267,7 +265,8 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  pip install jinja2 PyOpenGL
+  pip install setuptools
+  pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
   BotInstall_usd
 
   # Debug
