@@ -21,7 +21,7 @@ function BotPlatformSetup {
 }
 
 function BotTimeRemaining {
-  local remains=$(expr 33 - $SECONDS / 60)
+  local remains=$(expr 39 - $SECONDS / 60)
   if [[ $remains -gt 0 && ( -z "$1" || $remains -gt $1 ) ]]; then
     echo $remains
   fi
@@ -486,13 +486,6 @@ function BotRsyncToDir {
 }
 
 function BotInstall_pyside {
-  pushd "$(BotGitCloneRepo pyside --branch 5.6 https://code.qt.io/pyside/pyside-setup)"
-    git submodule update --init --recursive # --depth 5 -j $BOT_JOBS
-    for dir in Compiler port_v2 port_v3 widget-plugins pyside2uic; do
-      rsync -a "sources/pyside2-tools/pyside2uic/$f" "$BOT_ROOT/lib/python2.7/site-packages/pyside2uic/"
-    done
-  popd
-
   case `BotInstallCheckFlags "$1" "../lib/python2.7/site-packages/PySide2"` in
     0) return 0 ;;
     1) shift ;;
