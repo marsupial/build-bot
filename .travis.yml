@@ -281,6 +281,7 @@ script:
     sudo easy_install pip
   else
     python -m pip install --upgrade pip setuptools pkg_resources
+    python -m pip install --upgrade pip setuptools distribute
   fi
 
   # OSL
