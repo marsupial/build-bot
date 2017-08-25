@@ -285,7 +285,7 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  BotInstall_usd
+  # BotInstall_usd
 
   # Debug
   ls -l $BOT_ROOT/include
