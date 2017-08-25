@@ -279,8 +279,6 @@ script:
 
   if [ $TRAVIS_OS_NAME == 'osx' ]; then
     sudo easy_install pip
-  else
-    python -m pip install --upgrade pip setuptools
   fi
 
   # OSL
