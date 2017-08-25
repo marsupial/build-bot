@@ -280,7 +280,7 @@ script:
   if [ $TRAVIS_OS_NAME == 'osx' ]; then
     sudo easy_install pip
   else
-    python -m pip install --upgrade pip setuptools pkg_resources
+    curl https://bootstrap.pypa.io/ez_setup.py | python
     python -m pip install --upgrade pip setuptools distribute
   fi
 
