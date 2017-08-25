@@ -438,7 +438,11 @@ function BotInstall_boost {
     # echo "REMAINING: " `BotTimeRemaining`
     ./bootstrap.sh
     # echo "REMAINING: " `BotTimeRemaining`
-    ./bjam -j 4 --prefix="$BOT_ROOT" --build-type=minimal link=shared cxxflags="-Wno-c99-extensions -Wno-variadic-macros" $@ install # > /dev/null
+    bflags=""
+    if [[ $BOT_OS_NAME == 'osx' ]] ; then
+      bflags="-std=c++11 -stdlib=libc++"
+    fi
+    ./bjam -j 4 --prefix="$BOT_ROOT" --build-type=minimal link=shared cxxflags="${bflags} -Wno-c99-extensions -Wno-variadic-macros" $@ install # > /dev/null
     #./bjam -j 4 --prefix="$BOT_ROOT" --build-type=minimal link=shared install > /tmp/boost.log & tail -f /tmp/boost.log
     # travis_wait `BotTimeRemaining` ./bjam -j 4 --prefix="$BOT_ROOT" --build-type=minimal link=shared install > /tmp/boost.log
     # timeout "$(BotTimeRemaining)m" ./bjam -j 4 --prefix="$BOT_ROOT" --build-type=minimal link=shared install > /tmp/boost.log & tail -f /tmp/boost.log
