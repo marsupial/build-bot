@@ -201,7 +201,7 @@ script:
 
   # QT-5
   BotInstall_qt
-  #BotInstall_pyside
+  BotInstall_pyside
 
   # RAW
   BotInstall_libraw

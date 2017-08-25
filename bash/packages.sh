@@ -488,7 +488,7 @@ function BotInstall_pyside {
     done
   popd
 
-  case `BotInstallCheckFlags "$1" "../lib/python2.7/PySide2"` in
+  case `BotInstallCheckFlags "$1" "../lib/python2.7/site-packages/PySide2"` in
     0) return 0 ;;
     1) shift ;;
     2) ;;
