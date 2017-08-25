@@ -277,13 +277,6 @@ script:
     mv "$BOT_ROOT/OpenColorIOConfig.cmake" "$BOT_ROOT/lib/cmake"
   fi
 
-  if [ $TRAVIS_OS_NAME == 'osx' ]; then
-    sudo easy_install pip
-  else
-    curl https://bootstrap.pypa.io/ez_setup.py | python
-    python -m pip install --upgrade pip setuptools distribute
-  fi
-
   # OSL
   BotInstall_seexpr -DLLVM_DIR="$LLVM_DIRECTORY/lib/cmake/llvm"
   BotInstall_partio
@@ -292,8 +285,6 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  python -m pip install --install-option="--prefix=$BOT_ROOT" jinja2 PyOpenGL
-  export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
   BotInstall_usd
 
   # Debug
