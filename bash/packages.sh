@@ -21,7 +21,7 @@ function BotPlatformSetup {
 }
 
 function BotTimeRemaining {
-  local remains=$(expr 32 - $SECONDS / 60)
+  local remains=$(expr 42 - $SECONDS / 60)
   if [[ $remains -gt 0 && ( -z "$1" || $remains -gt $1 ) ]]; then
     echo $remains
   fi
@@ -1188,14 +1188,16 @@ function BotInstall_usd {
     2) ;;
   esac
 
-  BotRunOnURL msfae "https://pypi.python.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz#md5=2fcedc9284d50e577b5192e8e3578355" \
-    rsync -a markupsafe "$BOT_ROOT/lib/python2.7/site-packages/"
+  if [[ -z $(BotHasInclude "../lib/python2.7/site-packages/OpenGL") ]]; then
+    BotRunOnURL msfae "https://pypi.python.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz#md5=2fcedc9284d50e577b5192e8e3578355" \
+      rsync -a markupsafe "$BOT_ROOT/lib/python2.7/site-packages/"
 
-  BotRunOnURL jinja "https://pypi.python.org/packages/90/61/f820ff0076a2599dd39406dcb858ecb239438c02ce706c8e91131ab9c7f1/Jinja2-2.9.6.tar.gz#md5=6411537324b4dba0956aaa8109f3c77b" \
-    rsync -a jinja2 "$BOT_ROOT/lib/python2.7/site-packages/"
+    BotRunOnURL jinja "https://pypi.python.org/packages/90/61/f820ff0076a2599dd39406dcb858ecb239438c02ce706c8e91131ab9c7f1/Jinja2-2.9.6.tar.gz#md5=6411537324b4dba0956aaa8109f3c77b" \
+      rsync -a jinja2 "$BOT_ROOT/lib/python2.7/site-packages/"
 
-  BotRunOnURL pygl "https://pypi.python.org/packages/9c/1d/4544708aaa89f26c97cc09450bb333a23724a320923e74d73e028b3560f9/PyOpenGL-3.1.0.tar.gz#md5=0de021941018d46d91e5a8c11c071693" \
-    rsync -a OpenGL "$BOT_ROOT/lib/python2.7/site-packages/"
+    BotRunOnURL pygl "https://pypi.python.org/packages/9c/1d/4544708aaa89f26c97cc09450bb333a23724a320923e74d73e028b3560f9/PyOpenGL-3.1.0.tar.gz#md5=0de021941018d46d91e5a8c11c071693" \
+      rsync -a OpenGL "$BOT_ROOT/lib/python2.7/site-packages/"
+  fi
 
   export PYTHONPATH=$BOT_ROOT/lib/python2.7/site-packages
 

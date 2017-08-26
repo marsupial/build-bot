@@ -45,6 +45,7 @@ matrix:
 
 before_install:
 - |
+  echo "SECONDS $SECONDS"
   echo $(uname -a)
   export BOT_ROOT=$HOME/VFX
   export TMPDIR=/tmp
@@ -263,7 +264,9 @@ script:
   # LibGit2
   BotInstall_libgit
 
+  echo "SECONDS $SECONDS"
   BotInstall_usd
+  echo "SECONDS $SECONDS"
 
   # Debug
   ls -l $BOT_ROOT/include
