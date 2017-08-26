@@ -45,7 +45,7 @@ matrix:
 
 before_install:
 - |
-  cat "$HOME/travis.sh"
+  cat "${BASH_SOURCE[0]}"
   echo "MD5DEEP $(which md5deep)"
   BOT_JOBS=`getconf _NPROCESSORS_ONLN`
   echo "BOT_JOBS $BOT_JOBS"
@@ -64,7 +64,7 @@ before_install:
   export SECONDS=0
 
   mkdir -p $BOT_ROOT
-  travis_wait 25 BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-78cf844ad945e7b57aa5/buildbot-$BOT_OS_NAME.txz"
+  travis_wait 25 BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-7823e07045111d721b46/buildbot-$BOT_OS_NAME.txz"
   ls -la $BOT_ROOT
 
   if [ $TRAVIS_OS_NAME == 'linux' ]; then
@@ -195,7 +195,7 @@ script:
   BotInstall_dcmtk
 
   # boost
-  BotInstall_boost --force
+  BotInstall_boost
 
   # NumPy
   BotInstall_numpy
@@ -270,17 +270,8 @@ script:
   # LibGit2
   BotInstall_libgit
 
-  BotRunOnURL msfae "https://pypi.python.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz#md5=2fcedc9284d50e577b5192e8e3578355" \
-    rsync -a markupsafe "$BOT_ROOT/lib/python2.7/site-packages/"
-
-  BotRunOnURL jinja "https://pypi.python.org/packages/90/61/f820ff0076a2599dd39406dcb858ecb239438c02ce706c8e91131ab9c7f1/Jinja2-2.9.6.tar.gz#md5=6411537324b4dba0956aaa8109f3c77b" \
-    rsync -a jinja2 "$BOT_ROOT/lib/python2.7/site-packages/"
-
-  BotRunOnURL pygl "https://pypi.python.org/packages/9c/1d/4544708aaa89f26c97cc09450bb333a23724a320923e74d73e028b3560f9/PyOpenGL-3.1.0.tar.gz#md5=0de021941018d46d91e5a8c11c071693" \
-    rsync -a OpenGL "$BOT_ROOT/lib/python2.7/site-packages/"
-
   echo "SECONDS $SECONDS"
-  #TravisDisableCCache BotInstall_usd -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache
+  TravisDisableCCache BotInstall_usd -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache
   echo "SECONDS $SECONDS"
 
   # Debug
