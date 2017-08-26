@@ -169,6 +169,7 @@ function BotEmptyUsrLocal {
   sudo mv /usr/local.bak/bin/wget /usr/local/bin/
   sudo mv /usr/local.bak/bin/git /usr/local/bin/
   sudo mv /usr/local.bak/bin/ccache /usr/local/bin/
+  sudo mv /usr/local.bak/bin/md5deep /usr/local/bin/
 }
 
 function BotRestoreUsrLocal {
@@ -177,6 +178,7 @@ function BotRestoreUsrLocal {
   sudo mv /usr/local/bin/cmake /usr/local.bak/bin/
   sudo mv /usr/local/bin/wget /usr/local.bak/bin/
   sudo mv /usr/local/bin/git /usr/local.bak/bin/
+  sudo mv /usr/local/bin/md5deep /usr/local.bak/bin/
   sudo mv /usr/local/bin/timeout /usr/local.bak/bin/
   #tar -c /usr/local | gzip -9 > $HOME/built/built.tgz
   sudo mv /usr/local /usr/local.built

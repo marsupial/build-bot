@@ -146,6 +146,7 @@ before_install:
 
 script:
 - |
+  echo "DEEP: $(md5deep $HOME/.ccache)"
   echo "PkgConfig"
   # PkgConfig
   if [ $TRAVIS_OS_NAME == 'osx' ] ; then
@@ -276,6 +277,8 @@ script:
   # Debug
   ls -l $BOT_ROOT/include
 
+  echo "DEEP: $(md5deep $HOME/.ccache)"
+
   echo $(uname -a)
   if [ $(BotTimeRemaining 5) ]; then
     BotPlatformCleanup
@@ -293,6 +296,7 @@ script:
       BotRestoreUsrLocal
     fi
   fi
+  echo "DEEP: $(md5deep $HOME/.ccache)"
 
 before_deploy:
 - |
