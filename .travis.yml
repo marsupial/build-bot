@@ -286,24 +286,3 @@ script:
     fi
   fi
 
-before_deploy:
-- |
-  export BOT_DEPLOY=${BOT_ROOT}/../$(basename $TRAVIS_REPO_SLUG)-${TRAVIS_OS_NAME}.txz
-  #BZIP=-9 tar -cSjC ${BOT_ROOT} . > ${BOT_DEPLOY}
-  if [ ! $(BotTimeRemaining 15) ]; then
-    XZ_OPT=-9e travis_wait 30 tar -cSJf ${BOT_DEPLOY} -C "${BOT_ROOT}/include" .
-  else
-    XZ_OPT=-9e travis_wait 30 tar -cSJf ${BOT_DEPLOY} -C ${BOT_ROOT} .
-  fi
-
-deploy:
-  skip_cleanup: true
-  provider: releases
-  file: '${BOT_DEPLOY}'
-  api_key:
-    secure: "Lo+BOwacQViHom4DkhrnrVeJ2DoBgqj1joa+Yc0VcphcaKAzgZHLIHE4KMJ5j65iz9uFkqrkGNCvMyFBK/GMIKK9WpM/rx/93TnNZaYIHAlv7BTXgWIiwcgpM07r3L49Kto5JW5WkmYih5oM0CeUfVobYWsH4Z4a0/41srWieVZYY+/aWOXQqnfmaFTo9jCyVXkimOlS7R21gdktSzqlt0WSBjQTP02+sh/OZ+qiQB1DjITjdbbxqrkqKyeXv7T8tvVFwdejrNpvt/9ipnZKisKNxF8rZ/AOVEhoLnCPwqQCeEA4kbcZzPwdl6nEi4pjspD+Pf1HRcPMhdgU2DJ6V7GvLODZUWZdT/2G0NCqyxf65rm/U2N7ucrirGx4mpGbcGIkpknW99Kj0GZ5mBLaOJksKK6LMtQcDTl9gmZSadgVK6LtUnEvfzKdGWUUtJEp/thjTI8GbqNefL3jOHMU1RofT1+sK+RUHQ2bLkp0a3ScLGlJVMd5yQ0etBPT9BkOOyCLZZOIgV3uLi+bz+pt2Wtcw1AKOVvMMKio7LrNt3RqX7hlq3QgpwGwc3uCKpheMs23NVYldIhj18G7Ba7F9kTShOPASszMaoYpnJ/KwaPqYWFLl3c7SVgte2oxwg4x7GJeI3R+OK3IEiSeMAB7NOnml3Oda1DwnmCwk36/svA="
-  on:
-    branch: master
-    repo: $TRAVIS_REPO_SLUG
-    # tags: true
-    # condition: $TRAVIS_TAG != ""
