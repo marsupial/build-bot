@@ -45,6 +45,7 @@ matrix:
 
 before_install:
 - |
+  echo "MD5DEEP $(which md5deep)"
   BOT_JOBS=`getconf _NPROCESSORS_ONLN`
   echo "BOT_JOBS $BOT_JOBS"
   echo "SECONDS $SECONDS"
@@ -132,6 +133,8 @@ before_install:
     export BOT_CPP_UNIT=/usr/local/opt/cppunit
     export BOT_SWIG_BIN=/usr/local/opt/swig/bin
   fi
+
+  echo "MD5DEEP $(which md5deep)"
 
   function TravisDisableCCache {
     export CXX="$COMPILER"
