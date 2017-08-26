@@ -21,7 +21,7 @@ function BotPlatformSetup {
 }
 
 function BotTimeRemaining {
-  local remains=$(expr 42 - $SECONDS / 60)
+  local remains=$(expr 35 - $SECONDS / 60)
   if [[ $remains -gt 0 && ( -z "$1" || $remains -gt $1 ) ]]; then
     echo $remains
   fi
