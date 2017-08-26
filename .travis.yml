@@ -45,6 +45,8 @@ matrix:
 
 before_install:
 - |
+  BOT_JOBS=`getconf _NPROCESSORS_ONLN`
+  echo "BOT_JOBS $BOT_JOBS"
   echo "SECONDS $SECONDS"
   echo $(uname -a)
   export BOT_ROOT=$HOME/VFX
