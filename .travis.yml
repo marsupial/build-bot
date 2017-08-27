@@ -45,7 +45,9 @@ matrix:
 
 before_install:
 - |
-  cat "${BASH_SOURCE[0]}"
+  # cat "${BASH_SOURCE[0]}"
+  cat "$HOME/.casher/md5sums_before"
+  cat "$HOME/.casher/md5sums_after"
   echo "MD5DEEP $(which md5deep)"
   BOT_JOBS=`getconf _NPROCESSORS_ONLN`
   echo "BOT_JOBS $BOT_JOBS"
@@ -64,7 +66,7 @@ before_install:
   export SECONDS=0
 
   mkdir -p $BOT_ROOT
-  travis_wait 25 BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-7823e07045111d721b46/buildbot-$BOT_OS_NAME.txz"
+  travis_wait 25 BotExtractArchive "$BOT_ROOT" "https://github.com/marsupial/buildbot/releases/download/untagged-8a2a1c66dfef4548b532/buildbot-$BOT_OS_NAME.txz"
   ls -la $BOT_ROOT
 
   if [ $TRAVIS_OS_NAME == 'linux' ]; then
@@ -271,7 +273,7 @@ script:
   BotInstall_libgit
 
   echo "SECONDS $SECONDS"
-  TravisDisableCCache BotInstall_usd -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache
+  BotInstall_usd
   echo "SECONDS $SECONDS"
 
   # Debug
@@ -294,6 +296,9 @@ script:
       BotRestoreUsrLocal
     fi
   fi
+  cat "$HOME/.casher/md5sums_before"
+  cat "$HOME/.casher/md5sums_after"
+  echo "DONE"
 
 before_deploy:
 - |
