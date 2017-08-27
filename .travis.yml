@@ -46,8 +46,6 @@ matrix:
 before_install:
 - |
   # cat "${BASH_SOURCE[0]}"
-  cat "$HOME/.casher/md5sums_before"
-  cat "$HOME/.casher/md5sums_after"
   echo "MD5DEEP $(which md5deep)"
   BOT_JOBS=`getconf _NPROCESSORS_ONLN`
   echo "BOT_JOBS $BOT_JOBS"
@@ -296,8 +294,6 @@ script:
       BotRestoreUsrLocal
     fi
   fi
-  cat "$HOME/.casher/md5sums_before"
-  cat "$HOME/.casher/md5sums_after"
   echo "DONE"
 
 before_deploy:
