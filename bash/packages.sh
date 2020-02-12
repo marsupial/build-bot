@@ -328,7 +328,7 @@ function BotInstallPatchElf {
     2) ;;
   esac
 
-  BotMakeBuildArk patchelf https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 $@
+  BotMakeBuildArk patchelf https://nixos.org/releases/patchelf/patchelf-0.10/patchelf-0.10.tar.bz2 $@
   alias patchelf=$BOT_ROOT/bin/patchelf
 }
 
@@ -377,9 +377,9 @@ function BotPlatformInstall {
   if [[ $BOT_OS_NAME == 'osx' ]]; then
     if [[ 0 -eq 1 ]]; then
       # Intel TBB
-      local USD_TBB=tbb2017_20161128oss
+      local USD_TBB=tbb-2020.1
       #USD_TBB=tbb2017_20161004oss
-      local TBB_URL=https://www.threadingbuildingblocks.org/sites/default/files/software_releases/mac/${USD_TBB}_osx.tgz
+      local TBB_URL=https://github.com/intel/tbb/releases/download/v2020.1/${USD_TBB}-mac.tgz
       BotMvLibAndInclude `BotExtractUrl tbb $TBB_URL` "$BOT_ROOT"
     fi
 
@@ -426,7 +426,7 @@ function BotInstall_pkgconfig {
     return 0;
   fi
 
-  BotMakeBuildArk pkgcfg https://pkg-config.freedesktop.org/releases/pkg-config-0.29.1.tar.gz $@
+  BotMakeBuildArk pkgcfg https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz $@
 }
 
 function BotInstall_boost {
@@ -436,7 +436,7 @@ function BotInstall_boost {
     2) ;;
   esac
 
-  pushd `BotExtractUrl boost https://pilotfiber.dl.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.gz`
+  pushd `BotExtractUrl boost https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.bz2`
     # echo "REMAINING: " `BotTimeRemaining`
     ./bootstrap.sh
     # echo "REMAINING: " `BotTimeRemaining`
@@ -472,12 +472,12 @@ function BotInstall_freetype {
     2) ;;
   esac
 
-  BotMakeBuildArk bsftype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz --with-harfbuzz=no $@
-  BotMakeBuildArk harfbuzz https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.1.tar.bz2 $@
+  BotMakeBuildArk bsftype http://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.bz2 --with-harfbuzz=no $@
+  BotMakeBuildArk harfbuzz https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.4.0.tar.bz2 $@
 
   rm -rf "$BOT_ROOT/include/freetype2"
   rm -rf "$BOT_ROOT/lib/"libfreetype*
-  BotMakeBuildArk freetype http://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.gz $@
+  BotMakeBuildArk freetype http://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.bz2 $@
 }
 
 function BotRsyncToDir {
@@ -494,7 +494,7 @@ function BotInstall_pyside {
     2) ;;
   esac
 
-  pushd "$(BotGitCloneRepo pyside --branch 5.6 https://code.qt.io/pyside/pyside-setup)"
+  pushd "$(BotGitCloneRepo pyside --branch 5.12 https://code.qt.io/pyside/pyside-setup)"
     BotRunCommand python setup.py install --prefix="$BOT_ROOT" --qmake="$BOT_ROOT/bin/qmake"
     # --cmake=/path/to/bin/cmake --openssl=/path/to/openssl/bin
     if [[ $BOT_OS_NAME == 'osx' ]] ; then
@@ -565,11 +565,11 @@ function BotInstall_qt {
     export CCACHE_SLOPPINESS="pch_defines,time_macros" # ,$CCACHE_SLOPPINESS"
   fi
 
-  pushd "$(BotExtractUrl qt5 http://download.qt.io/archive/qt/5.6/5.6.1-1/single/qt-everywhere-opensource-src-5.6.1-1.tar.xz)"
-    rm -rf qtbase
-    git clone --depth 10 --branch $branch https://github.com/autodesk-forks/qtbase.git
-    rm -rf qtx11extras
-    git clone --depth 10 --branch $branch https://github.com/autodesk-forks/qtx11extras.git
+  pushd "$(BotExtractUrl qt5 http://download.qt.io/archive/qt/5.12/5.12.7/single/qt-everywhere-src-5.12.7.tar.xz)"
+    #rm -rf qtbase
+    #git clone --depth 10 --branch $branch https://github.com/autodesk-forks/qtbase.git
+    #rm -rf qtx11extras
+    #git clone --depth 10 --branch $branch https://github.com/autodesk-forks/qtx11extras.git
 
     BotInstall_fixupqt
 
@@ -607,7 +607,7 @@ function BotInstall_glew {
     2) ;;
   esac
 
-  pushd "$(BotExtractUrl glew https://cytranet.dl.sourceforge.net/project/glew/glew/2.0.0/glew-2.0.0.tgz)"
+  pushd "$(BotExtractUrl glew https://cytranet.dl.sourceforge.net/project/glew/glew/2.1.0/glew-2.1.0.tgz)"
     BotBuildTarget GLEW_PREFIX="$BOT_ROOT" GLEW_DEST="$BOT_ROOT" $@ install
     if [ $BOT_OS_NAME == 'linux' ]; then
       mv $BOT_ROOT/lib64/* $BOT_ROOT/lib
@@ -634,7 +634,7 @@ function BotInstall_glfw {
     2) ;;
   esac
 
-  BotCmakeInstallArk glfw https://github.com/glfw/glfw/archive/3.2.1.tar.gz $@
+  BotCmakeInstallArk glfw https://github.com/glfw/glfw/releases/download/3.3.2/glfw-3.3.2.bin.MACOS.zip $@
   if [[ $BOT_OS_NAME == 'osx' ]] ; then
     install_name_tool -id '@loader_path/../lib/' $BOT_ROOT/lib/libglfw.3.dylib
   fi
@@ -647,7 +647,7 @@ function BotInstall_ptex {
     2) ;;
   esac
 
-  BotCmakeInstallArk ptex https://github.com/wdas/ptex/archive/v2.1.28.tar.gz $@
+  BotCmakeInstallArk ptex https://github.com/wdas/ptex/archive/v2.3.2.tar.gz $@
 }
 
 function BotInstall_osd {
@@ -665,7 +665,7 @@ function BotInstall_osd {
   fi
 
   # https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_1_1.tar.gz
-  BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_3_0.tar.gz \
+  BotCmakeInstallArk osd https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v3_4_0.tar.gz \
     -DNO_REGRESSION=1 \ -DCUDA_HOST_COMPILER="$(which $CCOMPILER)" \
     -DGLEW_LOCATION="$BOT_ROOT" -DCLEW_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DNO_DOC=1 -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF \
@@ -705,9 +705,9 @@ function BotInstall_numpy {
   if [ $BOT_OS_NAME != 'linux' ]; then
     pushd `BotTmpDir numpy`
       if [ $BOT_OS_NAME == 'linux' ]; then
-        numpy="https://pypi.python.org/packages/5b/a4/761dd4596da94d3ce438d93673fcd8053eb368400526223ab7e981547592/numpy-1.12.0-cp27-cp27m-manylinux1_x86_64.whl"
+        numpy="https://files.pythonhosted.org/packages/e2/09/ab383630c567209d4108cadf19ae533582d3f89edddfd2f773018e373abb/numpy-1.18.1-cp35-cp35m-manylinux1_i686.whl"
       else
-        numpy="https://pypi.python.org/packages/4b/fb/99346d8d7d2460337f9e1772072d35e1274ca81ce9ef64f821d4686233b4/numpy-1.12.0-cp27-cp27m-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl"
+        numpy="https://files.pythonhosted.org/packages/82/f5/6749649c00c6fd811c57f6b85e9755651dc843d8be3831e67172928a7339/numpy-1.18.1-cp35-cp35m-macosx_10_6_intel.whl"
       fi
       numpy=`BotGetURL "$numpy"`
       echo "numpy: $numpy"
@@ -746,7 +746,7 @@ function BotInstall_openexr {
   #BotMakeBuildArk ilmbase http://download.savannah.nongnu.org/releases/openexr/ilmbase-2.2.0.tar.gz
   #BotMakeBuildArk openexr http://download.savannah.nongnu.org/releases/openexr/openexr-2.2.0.tar.gz --with-pkg-config=no LDFLAGS="-Wl,-rpath -Wl,$USD_DEPS/lib"
 
-  pushd `BotExtractUrl openexr https://github.com/openexr/openexr/archive/v2.2.0.tar.gz`
+  pushd `BotExtractUrl openexr https://github.com/AcademySoftwareFoundation/openexr/archive/v2.4.1.tar.gz`
     ls -l
     for dir in IlmBase OpenEXR PyIlmBase OpenEXR_Viewers; do
       pushd $dir
@@ -780,7 +780,7 @@ function BotInstall_hdf5 {
   fi
 
   # -Wno-strict-overflow -Wno-double-promotion -Wno-sign-conversion -Wno-c++-compat -Wno-cast-qual -Wno-format-nonliteral -Wno-unused-result -Wno-conversion -Wno-suggest-attribute=pure -Wno-suggest-attribute=const -Wno-frame-larger-than= -Wno-larger-than=
-  BotMakeBuildArk hdf5 https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.19.tar.gz --with-szip="$BOT_ROOT" $@
+  BotMakeBuildArk hdf5 https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.21.tar.bz2 --with-szip="$BOT_ROOT" $@
 }
 
 function BotInstall_alembic {
@@ -790,7 +790,7 @@ function BotInstall_alembic {
     2) ;;
   esac
 
-  BotCmakeInstallArk alembic https://github.com/alembic/alembic/archive/1.7.3.tar.gz \
+  BotCmakeInstallArk alembic https://github.com/alembic/alembic/archive/1.7.12.tar.gz \
     -DUSE_HDF5=ON -DUSE_PYALEMBIC=ON \
     -DALEMBIC_PYIMATH_MODULE_DIRECTORY="$BOT_ROOT/lib/python2.7/site-packages" \
     -DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY="$BOT_ROOT/include/PyImath" \
@@ -816,7 +816,7 @@ function BotInstall_lz4 {
     2) ;;
   esac
 
-  BotRunOnURL lz4 https://github.com/lz4/lz4/archive/v1.7.5.tar.gz \
+  BotRunOnURL lz4 https://github.com/lz4/lz4/archive/v1.9.2.tar.gz \
     BotCmakeBuild install ../contrib/cmake_unofficial
 }
 
@@ -827,7 +827,7 @@ function BotInstall_snappy {
     2) ;;
   esac
 
-  BotCmakeInstallArk snappy https://github.com/google/snappy/archive/1.1.6.tar.gz $@
+  BotCmakeInstallArk snappy https://github.com/google/snappy/archive/1.1.8.tar.gz $@
 }
 
 function BotInstall_zstd {
@@ -837,7 +837,7 @@ function BotInstall_zstd {
     2) ;;
   esac
 
-  BotRunOnURL zstd https://github.com/facebook/zstd/archive/v1.3.0.tar.gz \
+  BotRunOnURL zstd https://github.com/facebook/zstd/archive/v1.4.4.tar.gz \
     BotCmakeBuild install ../build/cmake
 }
 
@@ -855,7 +855,7 @@ function BotInstall_blosc {
   esac
 
   BotInstall_compressors
-  BotCmakeInstallArk blosc https://github.com/Blosc/c-blosc/archive/v1.12.1.tar.gz \
+  BotCmakeInstallArk blosc https://github.com/Blosc/c-blosc/archive/v1.17.1.tar.gz \
     -DPREFER_EXTERNAL_LZ4=ON -DPREFER_EXTERNAL_SNAPPY=ON -DPREFER_EXTERNAL_ZSTD=ON \
     -DPREFER_EXTERNAL_ZLIB=ON $@
 }
@@ -878,7 +878,7 @@ function BotInstall_openvdb {
     CXXFLAGS="$CXXFLAGS -stlib=libc++"
   fi
 
-  BotCmakeInstallArk openvdb https://github.com/dreamworksanimation/openvdb/archive/v4.0.2.tar.gz \
+  BotCmakeInstallArk openvdb https://github.com/AcademySoftwareFoundation/openvdb/archive/v7.0.0.tar.gz \
     -DHDF5_INCLUDE_DIRS="$BOT_ROOT/include" -DHDF5_LIBRARIES="$BOT_ROOT/lib" \
     -DBLOSC_LOCATION="$BOT_ROOT" -DTBB_LOCATION="$BOT_ROOT" \
     -DOPENEXR_LOCATION="$BOT_ROOT" -DILMBASE_LOCATION="$BOT_ROOT" \
@@ -901,7 +901,7 @@ function BotInstall_png {
     2) ;;
   esac
 
-  BotMakeBuildArk png https://download.sourceforge.net/libpng/libpng-1.6.30.tar.gz $@
+  BotMakeBuildArk png https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz $@
 }
 
 function BotInstallStaticToDynlib {
@@ -931,9 +931,10 @@ function BotInstall_jpeg {
   esac
 
   BotInstall_yasm
-  BotCmakeInstallGit jpeg https://github.com/marsupial/libjpeg-turbo.git \
+  #BotCmakeInstallGit jpeg https://github.com/marsupial/libjpeg-turbo.git \
+  #  -DNASM="$BOT_ROOT/bin/yasm" -DENABLE_SHARED=ON -DENABLE_STATIC=OFF $@
+  BotCmakeInstallArk jpeg https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz \
     -DNASM="$BOT_ROOT/bin/yasm" -DENABLE_SHARED=ON -DENABLE_STATIC=OFF $@
-  #BotCmakeInstallArk jpeg https://github.com/libjpeg-turbo/libjpeg-turbo/archive/1.5.2.tar.gz $@
 }
 
 function BotInstall_gif {
@@ -943,7 +944,7 @@ function BotInstall_gif {
     2) ;;
   esac
 
-  BotMakeBuildArk gif "https://iweb.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.bz2" $@
+  BotMakeBuildArk gif "https://iweb.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz" $@
 }
 
 function BotInstall_tiff {
@@ -953,7 +954,7 @@ function BotInstall_tiff {
     2) ;;
   esac
 
-  BotMakeBuildArk tiff http://dl.maptools.org/dl/libtiff/tiff-3.8.2.tar.gz $@
+  BotMakeBuildArk tiff http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz $@
 }
 
 function BotInstall_jpeg2000 {
@@ -965,9 +966,9 @@ function BotInstall_jpeg2000 {
 
   BotInstall_yasm;
   BotInstall_lcms2;
-  BotCmakeInstallArk jasper https://github.com/mdadams/jasper/archive/version-2.0.10.tar.gz $@
-  BotCmakeInstallArk openjpeg https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz $@
-  mv "$BOT_ROOT/lib/openjpeg-2.1" "$BOT_ROOT/lib/cmake"
+  BotCmakeInstallArk jasper https://github.com/mdadams/jasper/archive/version-2.0.16.tar.gz $@
+  BotCmakeInstallArk openjpeg https://github.com/uclouvain/openjpeg/archive/v2.3.1.tar.gz $@
+  mv "$BOT_ROOT/lib/openjpeg-2.3" "$BOT_ROOT/lib/cmake"
 }
 
 function BotInstall_webp {
@@ -977,7 +978,7 @@ function BotInstall_webp {
     2) ;;
   esac
 
-  pushd $(BotExtractUrl webp "https://github.com/webmproject/libwebp/archive/v0.6.0.tar.gz")
+  pushd $(BotExtractUrl webp "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz")
     BotCmakeBuild "" $@ ..
     mv src/webp "$BOT_ROOT/include"
     rsync -a "tmpbuild/include" "$BOT_ROOT"
@@ -1002,10 +1003,10 @@ function BotInstall_libraw {
     2) ;;
   esac
 
-  BotMakeBuildArk libraw http://www.libraw.org/data/LibRaw-0.18.0.tar.gz \
-    --enable-demosaic-pack-gpl2=$(BotExtractUrl librawdm2 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL2-0.18.0.tar.gz) \
-    --enable-demosaic-pack-gpl3=$(BotExtractUrl librawdm3 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL3-0.18.0.tar.gz) \
-    $@
+  BotMakeBuildArk libraw https://www.libraw.org/data/LibRaw-0.19.5.tar.gz $@
+  # --enable-demosaic-pack-gpl2=$(BotExtractUrl librawdm2 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL2-0.18.0.tar.gz) \
+  # --enable-demosaic-pack-gpl3=$(BotExtractUrl librawdm3 http://www.libraw.org/data/LibRaw-demosaic-pack-GPL3-0.18.0.tar.gz) \
+  # $@
 }
 
 function BotInstall_ffmpeg {
@@ -1016,7 +1017,7 @@ function BotInstall_ffmpeg {
   esac
 
   BotInstall_yasm
-  BotMakeBuildArk ffmpeg https://github.com/FFmpeg/FFmpeg/archive/n2.8.10.tar.gz \
+  BotMakeBuildArk ffmpeg https://github.com/FFmpeg/FFmpeg/archive/n4.1.5.tar.gz \
     --yasmexe="$BOT_ROOT/bin/yasm" $@
 }
 
@@ -1076,7 +1077,7 @@ function BotInstall_oiio {
   BotInstall_freetype
   #BotInstall_openssl
 
-  BotCmakeInstallGit oiio https://github.com/marsupial/oiio.git -DBOOST_ROOT="$BOT_ROOT" \
+  BotCmakeInstallArk oiio https://github.com/OpenImageIO/oiio/archive/Release-2.1.11.1.tar.gz -DBOOST_ROOT="$BOT_ROOT" \
     -DEMBEDPLUGINS=OFF -DSTOP_ON_WARNING=OFF \
     -DWEBP_INCLUDE_DIR="$BOT_ROOT/include" -DWEBP_LIBRARY="$BOT_ROOT/lib/libwebp.$BOT_SHLIB" \
     -DUSE_OPENJPEG=ON -DOPENJPEG_HOME="$BOT_ROOT" \
